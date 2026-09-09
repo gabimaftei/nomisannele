@@ -23,7 +23,7 @@ const PRODUCTS = [
   {
     id: 'buton',
     name: 'Buton',
-    photos: 3,
+    photos: 2,
     dims: { h: 28, w: 31, d: 9 },
     madeFrom: 6,
     tint: 'denim',
@@ -119,7 +119,7 @@ const PRODUCTS = [
   {
     id: 'nuante-de-gri',
     name: 'Nuanțe de gri',
-    photos: 4,
+    photos: 3,
     dims: { h: 35, w: 45, d: 15 },
     madeFrom: 3,
     tint: 'grey',
