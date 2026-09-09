@@ -32,7 +32,7 @@ const PRODUCTS = [
     ro: {
       tagline: 'Siluetă verticală, închidere clasică',
       description:
-        'O siluetă verticală și un model de prindere clasic — această geantă îți oferă spațiul perfect pentru iPad-ul tău.',
+        'O siluetă verticală și un model de prindere clasic. Are exact cât îți trebuie pentru iPad-ul tău.',
       pockets: '3 buzunare interioare, unul securizat cu fermoar',
       closure: 'Buton',
     },
@@ -80,7 +80,7 @@ const PRODUCTS = [
     ro: {
       tagline: 'Culori vii, cusături precise',
       description:
-        'Culori animate, linii trasate cu precizie și cusături de calitate — o adevărată piesă de rezistență. Mai colorată, pentru primăvară.',
+        'Culori animate, linii trasate cu precizie și cusături de calitate. O adevărată piesă de rezistență, mai colorată, pentru primăvară.',
       pockets: '2 buzunare interioare, unul securizat cu fermoar',
       closure: 'Capsă',
     },
@@ -128,7 +128,7 @@ const PRODUCTS = [
     ro: {
       tagline: 'Volum și linii, pentru zilele pline',
       description:
-        'Volum și linii — geanta ideală pentru o persoană ocupată, care preferă un model pragmatic. A doua geantă din atelier.',
+        'Volum și linii. Geanta ideală pentru cineva ocupat, care preferă un model pragmatic. A doua pe care am făcut-o.',
       pockets: '2 buzunare interioare, securizate cu arici',
       closure: 'Fermoar',
     },

@@ -89,17 +89,18 @@ a portfolio piece but can no longer be ordered.
 
 ## 3. How ordering works
 
-Instagram has **no way to pre-fill the text of a DM** from a link (WhatsApp does,
-Instagram doesn't). So the site does the next best thing:
+**One tap.** The *Întreabă de geanta asta* button opens the Instagram chat with
+`@nomisannele` (`https://ig.me/m/nomisannele`) straight away. Nothing to copy,
+nothing to paste, no extra screen in the way.
 
-1. Customer opens a bag and presses **Comandă pe Instagram**.
-2. A panel shows the order message, already written, with the bag name and measurements.
-3. Pressing **Copiază și deschide Instagram** copies that text *and* opens the
-   DM thread with `@nomisannele` (`https://ig.me/m/nomisannele`).
-4. The customer pastes it and hits send.
+Instagram has no way to pre-fill DM text from a link, so the site cannot drop the
+bag's name into the message on the customer's behalf. Instead, the line under the
+button tells them what to say:
 
-So every order lands in the Instagram inbox already formatted, and price and
-delivery get agreed in the chat — no checkout, no payment handling, nothing to maintain.
+> Se deschide conversația cu @nomisannele. Zi-ne că e vorba de „Roz" și îți spunem prețul.
+
+Price and delivery get agreed in the chat. No checkout, no payment handling,
+nothing to maintain.
 
 ---
 
@@ -148,10 +149,46 @@ The old `github.io` address keeps redirecting, so nothing breaks.
 
 ---
 
-## 6. Things worth doing next (not in v1)
+## 6. How it's built, and why it's safe
 
-- Real photos (biggest visual upgrade by far).
-- Prices on the cards, if you want them public.
-- A short "custom order" form for people who want their own jeans made into a bag.
-- Care instructions / washing guide.
-- More languages if you ship outside Romania.
+There is very little that *can* go wrong here: no server, no database, no forms,
+no logins, no payments, no cookies, no analytics. Nothing is collected from anyone.
+On top of that:
+
+- **No third-party requests at all.** The fonts are downloaded and served from
+  `assets/fonts/` rather than loaded from Google. That means no visitor data
+  leaves the site, which also keeps it clear of the GDPR problems that using
+  Google Fonts directly has caused for EU sites. Licences are in `assets/fonts/OFL.txt`.
+- **A Content-Security-Policy** in the page head restricts everything to `'self'`.
+  If someone ever managed to inject a script or a tracking pixel, the browser would
+  refuse to run it. `connect-src 'none'` means the page cannot make network calls at all.
+- **Every external link** carries `rel="noopener noreferrer"`, so the Instagram tab
+  cannot reach back into the site and no referrer is leaked.
+- **Accessibility**: text passes WCAG AA contrast (the weakest pairing is 4.78:1
+  against a 4.5 requirement), tap targets are at least 44px, the bag window traps
+  keyboard focus and closes on Escape, and the background is made inert while it is open.
+
+### One thing to know when you edit
+
+The CSS and JS are linked with a version marker, `?v=4`. **If you change
+`products.js`, `app.js` or `styles.css`, bump that number in `index.html`** (to
+`?v=5`, and so on). Without it, people who visited before may keep seeing the old
+version out of their browser cache for hours.
+
+---
+
+## 7. Things worth doing next
+
+- **Check the story text.** The "Cine suntem" section is written in their voice from
+  what the Instagram posts show — mother and daughter, 2025, Patchwork being the first
+  bag out of twelve pairs of jeans. The tone and the shape of the story are a guess.
+  Whoever actually lived it should read it and correct it.
+- **A real photo for that section.** It currently falls back to Patchwork. Drop a
+  photo of the two of them, or of the workshop, at `assets/images/story.jpg` and it
+  takes over automatically.
+- **The originals of the bag photos** (see section 1).
+- **Keep the counter honest.** "26 perechi salvate până acum" in the *Cum le facem*
+  section is hand-written in `index.html` and in `app.js` (`process.f2`). It needs
+  updating as more bags are made.
+- Prices on the cards, if you ever want them public.
+- Care and washing instructions.
