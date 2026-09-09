@@ -21,19 +21,21 @@ screenshots in `~/Downloads`, cropped to remove the phone status bar, the
 Instagram header, the carousel counter and the like/comment bar, then scaled to
 1000 px wide and compressed.
 
-Each bag now has three photos, taken from all three slides of its post:
-the outside shot, the inside shot (cut out of the "Fă loc și pentru
-sustenabilitate" card), and the smaller photo from the "Măsurători" card,
-which is usually a different angle.
+**Every bag has exactly two photos: the outside and the inside.** That is all
+the material contains. Each Instagram post has 6–7 slides, but only the first
+three were ever screenshotted onto this computer, and of those three:
 
-| Bag | Photos in place |
-|---|---|
-| Buton | outside, plaid-lined interior, angled view |
-| Broderie partea 2 | outside, interior, close-up of the embroidered pocket |
-| Roz | outside, interior, corner detail |
-| Broderie | outside, interior with the flower, side view |
-| Nuanțe de gri | outside, interior, angled view, **plus** the waistband detail — 4 photos |
-| Patchwork | outside, interior with the laptop, top-down view |
+- slide 1, the "Măsurători" card, holds a small photo of the bag — but it is the
+  *same view* as slide 3, just cropped differently;
+- slide 2, the "Fă loc și pentru sustenabilitate" card, holds the interior shot,
+  which is genuinely different and is now photo 2;
+- slide 3 is the outside shot, and is photo 1.
+
+A third photo was tried and removed: on every bag it turned out to be the outside
+again. Two distinct photos beat three where one is a repeat.
+
+The interiors are cropped tight to the bag and kept at their native size — they
+are not enlarged, because enlarging them was what made them look soft.
 
 > **Note on one filename.** Broderie partea 2 used to have the id `broderie-2`,
 > which produced `broderie-2-1.jpg` — uncomfortably close to `broderie-2.jpg`,

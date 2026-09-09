@@ -47,7 +47,7 @@ const PRODUCTS = [
   {
     id: 'broderie-partea-2',
     name: 'Broderie partea 2',
-    photos: 3,
+    photos: 2,
     dims: { h: 25, w: 38, d: 6 },
     madeFrom: 1,
     tint: 'dark',
@@ -71,7 +71,7 @@ const PRODUCTS = [
   {
     id: 'roz',
     name: 'Roz',
-    photos: 3,
+    photos: 2,
     dims: { h: 25, w: 36, d: 10 },
     madeFrom: 3,
     tint: 'pink',
@@ -95,7 +95,7 @@ const PRODUCTS = [
   {
     id: 'broderie',
     name: 'Broderie',
-    photos: 3,
+    photos: 2,
     dims: { h: 25, w: 40, d: 10 },
     madeFrom: 1,
     tint: 'denim',
@@ -119,7 +119,7 @@ const PRODUCTS = [
   {
     id: 'nuante-de-gri',
     name: 'Nuanțe de gri',
-    photos: 3,
+    photos: 2,
     dims: { h: 35, w: 45, d: 15 },
     madeFrom: 3,
     tint: 'grey',
@@ -143,7 +143,7 @@ const PRODUCTS = [
   {
     id: 'patchwork',
     name: 'Patchwork',
-    photos: 3,
+    photos: 2,
     dims: { h: 40, w: 42, d: 10 },
     madeFrom: 12,
     tint: 'patchwork',
