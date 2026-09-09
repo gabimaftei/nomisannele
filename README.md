@@ -116,18 +116,35 @@ button needs a real `http://` or `https://` address, so use the command above fo
 
 ---
 
-## 5. Putting it online
+## 5. It's online
 
-The site is fully static, so the free tiers of these all work — drag the folder in:
+**Live at <https://gabimaftei.github.io/nomisannele/>**
 
-- **Netlify Drop** — <https://app.netlify.com/drop> — drag the folder, done, gives you a URL.
-- **Cloudflare Pages** or **Vercel** — same idea, connect a folder or a repo.
-- **GitHub Pages** — free, needs a GitHub account.
+Hosted free on GitHub Pages from <https://github.com/gabimaftei/nomisannele>
+(account `gabimaftei`, branch `main`). No build step — Pages serves the files as they are.
 
-Then put the URL in the Instagram bio link.
+### Publishing a change
 
-A custom domain (e.g. `nomisannele.ro`) costs roughly €10–15/year and can be pointed
-at any of the hosts above.
+Anything committed to `main` goes live about a minute later:
+
+```bash
+git add -A && git commit -m "Add new bag" && git push
+```
+
+### Moving to a real domain
+
+`nomisannele.ro` (~€10–15/year, from RoTLD, Namecheap or Cloudflare) would read far
+better in the Instagram bio. Once it's bought:
+
+1. At the registrar, add four `A` records for the apex pointing to GitHub Pages:
+   `185.199.108.153`, `185.199.109.153`, `185.199.110.153`, `185.199.111.153`
+   — and a `CNAME` for `www` pointing to `gabimaftei.github.io`.
+2. In the repo: **Settings → Pages → Custom domain**, enter the domain, save, then
+   tick **Enforce HTTPS** once the certificate is issued (usually under an hour).
+3. Update the two absolute URLs in `index.html` (`og:image` and `og:url`) to the new
+   domain, so link previews keep working.
+
+The old `github.io` address keeps redirecting, so nothing breaks.
 
 ---
 
