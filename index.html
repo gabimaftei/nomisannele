@@ -30,7 +30,7 @@
 <link rel="preload" as="font" type="font/woff2" href="assets/fonts/jost-300-latin.woff2" crossorigin>
 <link rel="preload" as="font" type="font/woff2" href="assets/fonts/cormorant-garamond-400-latin.woff2" crossorigin>
 <link rel="stylesheet" href="assets/css/fonts.css">
-<link rel="stylesheet" href="assets/css/styles.css?v=12">
+<link rel="stylesheet" href="assets/css/styles.css?v=15">
 </head>
 <body>
 
@@ -158,7 +158,21 @@
     <h2 class="section__title" id="process-title" data-i18n="process.title">De la blugi purtați la geantă</h2>
   </div>
 
-  <ol class="steps">
+  <!-- Varianta cu rotire pe scroll. Rămâne ascunsă până când app.js
+       confirmă că browserul poate WebGL și că nu s-a cerut mai puțină
+       mișcare; altfel rămâne lista simplă de mai jos. -->
+  <div class="orbit" id="orbit" hidden>
+    <div class="orbit__sticky">
+      <div class="orbit__stage">
+        <canvas class="orbit__canvas" id="orbit-canvas" role="img"></canvas>
+        <p class="orbit__hint" id="orbit-hint" aria-hidden="true"></p>
+      </div>
+      <ol class="orbit__steps" id="orbit-steps"></ol>
+      <div class="orbit__rail" aria-hidden="true"><span id="orbit-rail-fill"></span></div>
+    </div>
+  </div>
+
+  <ol class="steps" id="steps-static">
     <li class="step">
       <span class="step__num" aria-hidden="true">01</span>
       <h3 data-i18n="process.s1t">Strângem blugi</h3>
@@ -260,8 +274,8 @@
   </div>
 </div>
 
-<script src="assets/js/products.js?v=12"></script>
-<script src="assets/js/bagviewer.js?v=12"></script>
-<script src="assets/js/app.js?v=12"></script>
+<script src="assets/js/products.js?v=15"></script>
+<script src="assets/js/bagviewer.js?v=15"></script>
+<script src="assets/js/app.js?v=15"></script>
 </body>
 </html>

@@ -94,6 +94,9 @@
       'model.note': 'Model tridimensional al formei, pe care îl poți roti. Culoarea și materialul real se văd în fotografii.',
       'model.loading': 'Se încarcă modelul…',
       'model.error': 'Modelul nu a putut fi încărcat. Fotografiile sunt mai sus.',
+
+      'orbit.hint': 'Derulează ca să întorci geanta',
+      'orbit.alt': 'Geanta Patchwork, în trei dimensiuni, care se rotește pe măsură ce derulezi',
     },
 
     en: {
@@ -176,6 +179,9 @@
       'model.note': 'A three-dimensional model of the shape, which you can turn around. The real colours and fabric are in the photographs.',
       'model.loading': 'Loading the model…',
       'model.error': 'The model could not be loaded. The photographs are above.',
+
+      'orbit.hint': 'Scroll to turn the bag',
+      'orbit.alt': 'The Patchwork bag in three dimensions, turning as you scroll',
     },
   };
 
@@ -261,6 +267,7 @@
     try { localStorage.setItem('na-lang', next); } catch (e) { /* navigare privată */ }
 
     renderGrid();
+    if (typeof orbit !== 'undefined' && orbit && orbit.active()) orbit.refresh();
     if (openProduct) fillProductModal(openProduct);
   }
 
@@ -325,12 +332,16 @@
        la următoarea deschidere */
     var scene = $('.pm__3d', stage);
     if (scene) scene.remove();
+    if (pmBox) pmBox.classList.remove('is-3d');
     note3d.hidden = true;
     note3d.textContent = '';
   }
 
+  var pmBox = $('.pm');
+
   function setStage(p, i) {
     disposeViewer();
+    if (pmBox) pmBox.classList.remove('is-3d');
     stage.innerHTML = '';
     stage.appendChild(
       photo(photoSrc(p, i), fill('a11y.photoOf', { n: i, name: p.name }), p.name, p.tint, true)
@@ -340,6 +351,8 @@
   /* Modelul (aprox. 460 KB) se descarcă abia când cineva apasă tab-ul 3D. */
   function setStage3D(p) {
     disposeViewer();
+    /* modelul primește toată lățimea ferestrei, nu doar coloana din stânga */
+    if (pmBox) pmBox.classList.add('is-3d');
     stage.innerHTML = '';
 
     var wrap = el('div', 'pm__3d');
@@ -590,6 +603,125 @@
 
   /* Fotografia din secțiunea „Cine suntem”. Dacă story.jpg încă nu există,
      punem Patchwork, geanta despre care vorbește chiar textul de alături. */
+  /* ───────────────────────────────────────────
+     „Cum le facem”: geanta se rotește pe scroll
+     ───────────────────────────────────────────
+     O secțiune înaltă, cu un panou lipit în ea. Pe măsură ce cobori,
+     Patchwork face o tură completă, iar cei patru pași se schimbă în
+     ritmul rotirii. Dacă browserul nu poate WebGL sau dacă s-a cerut
+     mai puțină mișcare, nu pornește deloc și rămâne lista obișnuită.
+     ─────────────────────────────────────────── */
+
+  var orbit = (function () {
+    var host = $('#orbit');
+    var stat = $('#steps-static');
+    if (!host || !stat) return null;
+
+    var STEPS = 4;
+    var MODEL = 'patchwork.glb';   // se rotește complet și are cele mai multe detalii
+
+    var canvas = $('#orbit-canvas');
+    var stepsBox = $('#orbit-steps');
+    var railFill = $('#orbit-rail-fill');
+    var hint = $('#orbit-hint');
+
+    var viewer = null, frame = null, progress = -1, current = -1, started = false;
+
+    function eligible() {
+      if (!window.BagViewer || !window.BagViewer.supported()) return false;
+      try {
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return false;
+      } catch (e) { /* ignoră */ }
+      return true;
+    }
+
+    /* Textele vin din același dicționar ca lista simplă, ca să nu existe
+       două locuri de actualizat. */
+    function renderSteps() {
+      stepsBox.innerHTML = '';
+      for (var i = 1; i <= STEPS; i++) {
+        var li = el('li', 'orbit__step');
+        li.appendChild(el('span', 'orbit__num', '0' + i));
+        li.appendChild(el('h3', null, t('process.s' + i + 't')));
+        li.appendChild(el('p', null, t('process.s' + i + 'p')));
+        stepsBox.appendChild(li);
+      }
+      if (hint) hint.textContent = t('orbit.hint');
+      if (canvas) canvas.setAttribute('aria-label', t('orbit.alt'));
+      current = -1;
+      paint();
+    }
+
+    function paint() {
+      var p = Math.max(0, progress);
+      var idx = Math.min(STEPS - 1, Math.floor(p * STEPS));
+      if (idx !== current) {
+        current = idx;
+        $$('.orbit__step', stepsBox).forEach(function (n, i) {
+          n.classList.toggle('is-on', i === idx);
+        });
+      }
+      if (railFill) railFill.style.transform = 'scaleY(' + p.toFixed(4) + ')';
+      if (viewer && viewer.isReady()) {
+        /* o tură completă pe toată înălțimea secțiunii */
+        viewer.setOrbit(0.5 + p * Math.PI * 2, -0.06 + Math.sin(p * Math.PI) * 0.12);
+      }
+    }
+
+    function measure() {
+      var rect = host.getBoundingClientRect();
+      var travel = host.offsetHeight - window.innerHeight;
+      var p = travel > 0 ? (-rect.top) / travel : 0;
+      p = Math.max(0, Math.min(1, p));
+      if (Math.abs(p - progress) < 0.0008) return;
+      progress = p;
+      if (frame) return;
+      frame = window.requestAnimationFrame(function () { frame = null; paint(); });
+    }
+
+    function start() {
+      if (started) return;
+      started = true;
+      viewer = window.BagViewer.create(canvas, 'assets/models/' + MODEL, {
+        interactive: false,
+        autoRotate: false,
+        onReady: function () { host.classList.add('is-ready'); progress = -1; measure(); },
+        onError: stop
+      });
+    }
+
+    /* dacă modelul nu vine, ne întoarcem la lista simplă, fără scandal */
+    function stop() {
+      host.hidden = true;
+      stat.hidden = false;
+      if (viewer) { viewer.dispose(); viewer = null; }
+      window.removeEventListener('scroll', measure);
+      window.removeEventListener('resize', measure);
+    }
+
+    function enable() {
+      if (!eligible()) return;
+      host.hidden = false;
+      stat.hidden = true;
+      renderSteps();
+      window.addEventListener('scroll', measure, { passive: true });
+      window.addEventListener('resize', measure);
+      measure();
+
+      /* modelul se descarcă abia când secțiunea se apropie de ecran */
+      if ('IntersectionObserver' in window) {
+        var io = new IntersectionObserver(function (entries) {
+          if (entries[0].isIntersecting) { io.disconnect(); start(); }
+        }, { rootMargin: '300px 0px' });
+        io.observe(host);
+      } else {
+        start();
+      }
+    }
+
+    return { enable: enable, refresh: renderSteps, active: function () { return !host.hidden; } };
+  })();
+
   (function storyPhoto() {
     var box = $('[data-photo="story"]');
     if (!box) return;
@@ -627,6 +759,8 @@
     saved = nav0.indexOf('ro') === 0 ? 'ro' : 'en';
   }
   applyLang(saved === 'en' ? 'en' : 'ro');
+
+  if (orbit) orbit.enable();
 
   $$('.section__head, .story, .steps, .facts, .contact').forEach(function (n) {
     n.classList.add('reveal');

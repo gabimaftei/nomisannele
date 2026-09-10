@@ -5,6 +5,7 @@ Plain HTML, CSS and JavaScript — no build step, no dependencies, no server cod
 
 ```
 index.html
+tools/optimise-model.py  ← shrinks a .glb for the web (see section 6)
 assets/
   css/styles.css
   css/fonts.css      ← @font-face rules for the local fonts
@@ -193,6 +194,44 @@ accurate all the way round:
 
 That limit is the `modelFullRotation: false` flag in `products.js`.
 
+### The scroll section
+
+"Cum le facem" is no longer a static list of four steps. It is a tall section with
+a panel stuck inside it: as you scroll through, the **Patchwork** bag turns a full
+360° while the four steps cross-fade in time with the rotation, and a thin rail on
+the right shows how far through you are.
+
+It is progressive enhancement, not a requirement. `index.html` still contains the
+plain four-step list (`#steps-static`); `app.js` only swaps in the scrolling version
+when the browser can do WebGL **and** the visitor has not asked for reduced motion.
+If the model fails to load at any point, the section quietly puts the plain list back.
+
+The model is only fetched when the section comes within 300px of the viewport, and
+the renderer draws exactly one frame per scroll update — there is no animation loop
+running in the background.
+
+To use a different bag, change `MODEL` at the top of the orbit block in `app.js`.
+It should be one with `modelFullRotation: true`, since the section turns it all the
+way round.
+
+### Making the models smaller
+
+`tools/optimise-model.py` shrinks a `.glb` for the web without dropping a single
+triangle:
+
+```bash
+python3 tools/optimise-model.py raw.glb assets/models/name.glb
+```
+
+It sorts the triangles spatially, renumbers the vertices in the order they are used,
+and quantises the positions to 16-bit integers with the real scale moved into the
+node transform (the standard `KHR_mesh_quantization` extension, so the file still
+opens in Blender or three.js).
+
+On these three bags that took **386 KB down to 259 KB each over the wire** — a third
+smaller — with no visible difference. Note that GitHub Pages already gzips `.glb`, so
+the on-disk size overstates what visitors actually download.
+
 ### The viewer
 
 `assets/js/bagviewer.js` is a small `.glb` reader plus a WebGL renderer, written
@@ -210,9 +249,8 @@ Two things it does deliberately:
 - **If WebGL is unavailable, the tab does not appear at all.** The visitor gets the
   photographs, with no broken box and no apology.
 
-The source `.glb` files had 32-bit triangle indices even though the meshes have
-fewer than 65,536 vertices. They were rewritten with 16-bit indices, which took the
-three of them from 2.1 MB to 1.4 MB with no loss of detail.
+It reads both plain float positions and the quantised 16-bit ones the optimiser
+produces, and applies the node's scale and translation if it has any.
 
 ---
 
