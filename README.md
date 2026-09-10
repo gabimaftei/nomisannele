@@ -7,9 +7,13 @@ Plain HTML, CSS and JavaScript — no build step, no dependencies, no server cod
 index.html
 assets/
   css/styles.css
-  js/products.js   ← the bag catalogue (edit this to add bags)
-  js/app.js        ← page behaviour
-  images/          ← drop the photos in here
+  css/fonts.css      ← @font-face rules for the local fonts
+  js/products.js     ← the bag catalogue (edit this to add bags)
+  js/app.js          ← page behaviour
+  js/bagviewer.js    ← the 3D viewer (see section 6)
+  images/            ← the photos
+  fonts/             ← self-hosted webfonts + their licence
+  models/            ← the .glb 3D models
 ```
 
 ---
@@ -85,12 +89,17 @@ Open `assets/js/products.js` and copy one of the blocks. Everything is commented
 {
   id: 'noua-geanta',        // no spaces — also the photo filename prefix
   name: 'Nouă geantă',
-  photos: 6,                // how many photos exist
+  photos: 2,                // how many photos exist
   dims: { h: 30, w: 40, d: 12 },   // cm; use null if not measured yet
   madeFrom: 2,              // pairs of jeans, or null to hide
-  sold: false,              // true → shows "Vândut", order button off
-  ro: { tagline: '…', description: '…', features: ['…', '…'] },
-  en: { tagline: '…', description: '…', features: ['…', '…'] },
+  tint: 'denim',            // colour of the placeholder until photos arrive
+  badge: null,              // e.g. 'first' for a little label on the card
+  sold: false,              // true → shows "Vândută", order button off
+  ro: { tagline: '…', description: '…', pockets: '…', closure: '…' },
+  en: { tagline: '…', description: '…', pockets: '…', closure: '…' },
+  // optional, only if there is a 3D model for it:
+  // model: 'noua-geanta.glb',
+  // modelFullRotation: true,
 }
 ```
 
@@ -124,8 +133,9 @@ cd ~/Desktop/NomisAnnele && python3 -m http.server 4321
 
 Then open <http://localhost:4321>.
 
-(Opening `index.html` by double-clicking mostly works too, but the copy-to-clipboard
-button needs a real `http://` or `https://` address, so use the command above for testing.)
+Use that rather than double-clicking `index.html`: opened as a `file://` page, the
+Content-Security-Policy blocks the 3D models from loading, so the 3D tab appears
+broken for no real reason.
 
 ---
 
@@ -161,7 +171,52 @@ The old `github.io` address keeps redirecting, so nothing breaks.
 
 ---
 
-## 6. How it's built, and why it's safe
+## 6. The 3D models
+
+Three bags — **Buton, Patchwork and Nuanțe de gri** — have a rotatable 3D model,
+shown as a third tab in the gallery next to the photos. The other three bags show
+nothing extra; the tab only appears when `products.js` gives the bag a `model`.
+
+**They are white on purpose, and cannot be otherwise.** The files contain geometry
+only: no materials, no textures, and — crucially — no UV coordinates, which is what
+a texture needs in order to be wrapped onto a shape. No denim can ever be applied to
+them. That is why the note under the viewer says the real colours are in the
+photographs. Do not remove that note.
+
+The models were also reconstructed from photographs, so they are not equally
+accurate all the way round:
+
+| model | rotation |
+|---|---|
+| `patchwork.glb`, `nuante-de-gri.glb` | holds up from every side — free rotation |
+| `buton.glb` | the back is invented and mushy — limited to ±72° from the front |
+
+That limit is the `modelFullRotation: false` flag in `products.js`.
+
+### The viewer
+
+`assets/js/bagviewer.js` is a small `.glb` reader plus a WebGL renderer, written
+for these files specifically. It is about 10 KB. A general-purpose 3D library would
+have been ~700 KB to draw 40,000 untextured triangles, and would have had to be
+self-hosted anyway because of the Content-Security-Policy.
+
+It generates the missing surface normals at load time, centres and scales each model
+so all bags appear the same size, and lights them with a fixed studio setup so that
+turning the bag reveals the seams.
+
+Two things it does deliberately:
+- **Nothing downloads until asked.** A model is ~460 KB and is only fetched when
+  someone actually presses the 3D tab.
+- **If WebGL is unavailable, the tab does not appear at all.** The visitor gets the
+  photographs, with no broken box and no apology.
+
+The source `.glb` files had 32-bit triangle indices even though the meshes have
+fewer than 65,536 vertices. They were rewritten with 16-bit indices, which took the
+three of them from 2.1 MB to 1.4 MB with no loss of detail.
+
+---
+
+## 7. How it's built, and why it's safe
 
 There is very little that *can* go wrong here: no server, no database, no forms,
 no logins, no payments, no cookies, no analytics. Nothing is collected from anyone.
@@ -173,7 +228,8 @@ On top of that:
   Google Fonts directly has caused for EU sites. Licences are in `assets/fonts/OFL.txt`.
 - **A Content-Security-Policy** in the page head restricts everything to `'self'`.
   If someone ever managed to inject a script or a tracking pixel, the browser would
-  refuse to run it. `connect-src 'none'` means the page cannot make network calls at all.
+  refuse to run it. `connect-src 'self'` allows exactly one kind of network call:
+  reading a 3D model from this same site. Nothing may be sent anywhere else.
 - **Every external link** carries `rel="noopener noreferrer"`, so the Instagram tab
   cannot reach back into the site and no referrer is leaked.
 - **Accessibility**: text passes WCAG AA contrast (the weakest pairing is 4.78:1
@@ -182,14 +238,14 @@ On top of that:
 
 ### One thing to know when you edit
 
-The CSS and JS are linked with a version marker, `?v=4`. **If you change
+The CSS and JS are linked with a version marker, `?v=12`. **If you change
 `products.js`, `app.js` or `styles.css`, bump that number in `index.html`** (to
-`?v=5`, and so on). Without it, people who visited before may keep seeing the old
+`?v=13`, and so on). Without it, people who visited before may keep seeing the old
 version out of their browser cache for hours.
 
 ---
 
-## 7. Things worth doing next
+## 8. Things worth doing next
 
 - **Check the story text.** The "Cine suntem" section is written in their voice from
   what the Instagram posts show — mother and daughter, 2025, Patchwork being the first

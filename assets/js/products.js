@@ -29,6 +29,8 @@ const PRODUCTS = [
     tint: 'denim',
     badge: null,
     sold: false,
+    model: 'buton.glb',
+    modelFullRotation: false, // spatele e reconstruit prost, se rotește doar în față
     ro: {
       tagline: 'Siluetă verticală, închidere clasică',
       description:
@@ -125,6 +127,8 @@ const PRODUCTS = [
     tint: 'grey',
     badge: null,
     sold: false,
+    model: 'nuante-de-gri.glb',
+    modelFullRotation: true,
     ro: {
       tagline: 'Volum și linii, pentru zilele pline',
       description:
@@ -149,6 +153,8 @@ const PRODUCTS = [
     tint: 'patchwork',
     badge: 'first',
     sold: false,
+    model: 'patchwork.glb',
+    modelFullRotation: true,
     ro: {
       tagline: 'Prima geantă și primul proiect ambițios',
       description:

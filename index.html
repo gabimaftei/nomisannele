@@ -7,8 +7,9 @@
 
 <meta name="description" content="Mamă și fiică. Coasem genți din blugi purtați, acasă, una câte una. Nu iese niciodată aceeași geantă de două ori.">
 
-<!-- Nicio resursă din afară: fonturi, imagini și scripturi sunt toate locale. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self'; font-src 'self'; script-src 'self'; connect-src 'none'; object-src 'none'; frame-src 'none'; base-uri 'self'; form-action 'none'">
+<!-- Nicio resursă din afară: fonturi, imagini, scripturi și modele sunt toate locale.
+     connect-src 'self' permite doar citirea modelelor 3D de pe același domeniu. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self'; font-src 'self'; script-src 'self'; connect-src 'self'; object-src 'none'; frame-src 'none'; base-uri 'self'; form-action 'none'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="theme-color" content="#1e3050">
 <meta name="color-scheme" content="light">
@@ -29,7 +30,7 @@
 <link rel="preload" as="font" type="font/woff2" href="assets/fonts/jost-300-latin.woff2" crossorigin>
 <link rel="preload" as="font" type="font/woff2" href="assets/fonts/cormorant-garamond-400-latin.woff2" crossorigin>
 <link rel="stylesheet" href="assets/css/fonts.css">
-<link rel="stylesheet" href="assets/css/styles.css?v=7">
+<link rel="stylesheet" href="assets/css/styles.css?v=12">
 </head>
 <body>
 
@@ -241,6 +242,7 @@
       <div class="pm__gallery">
         <div class="pm__stage" id="pm-stage"></div>
         <div class="pm__thumbs" id="pm-thumbs"></div>
+        <p class="pm__3dnote" id="pm-3dnote" hidden></p>
       </div>
       <div class="pm__info">
         <p class="eyebrow" id="pm-tagline"></p>
@@ -258,7 +260,8 @@
   </div>
 </div>
 
-<script src="assets/js/products.js?v=7"></script>
-<script src="assets/js/app.js?v=7"></script>
+<script src="assets/js/products.js?v=12"></script>
+<script src="assets/js/bagviewer.js?v=12"></script>
+<script src="assets/js/app.js?v=12"></script>
 </body>
 </html>
