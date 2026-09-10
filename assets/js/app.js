@@ -697,7 +697,7 @@
         viewer.setOrbit(
           0.5 + p * Math.PI * 2,
           -0.10 + ease * 0.20,
-          4.15 - ease * 0.55
+          1.0 - ease * 0.10      /* apropiere de 10% la mijlocul secțiunii */
         );
       }
     }

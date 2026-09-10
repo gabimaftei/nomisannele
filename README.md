@@ -235,6 +235,17 @@ On these three bags that took **386 KB down to 259 KB each over the wire** — a
 smaller — with no visible difference. Note that GitHub Pages already gzips `.glb`, so
 the on-disk size overstates what visitors actually download.
 
+### Framing
+
+The camera works out its own distance from the size of the model and the shape of
+the frame, using whichever of the vertical and horizontal angles is tighter. This
+is not decoration: when the scrolling section was switched from Patchwork to
+Nuanțe de gri, a fixed camera distance left the bag cropped at the top and bottom.
+Any model, in any shaped box, now fits with a margin.
+
+`setOrbit(azimuth, polar, closeness)` takes closeness as a fraction of that fitted
+distance, not an absolute number, so pulling the camera in never breaks the fit.
+
 ### The viewer
 
 `assets/js/bagviewer.js` is a small `.glb` reader plus a WebGL renderer, written

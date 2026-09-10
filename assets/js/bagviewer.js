@@ -217,11 +217,16 @@
     var cx = (min[0] + max[0]) / 2, cy = (min[1] + max[1]) / 2, cz = (min[2] + max[2]) / 2;
     var span = Math.max(max[0] - min[0], max[1] - min[1], max[2] - min[2]) || 1;
     var scale = 2 / span;
+    var maxR = 0;
     for (var j = 0; j < positions.length; j += 3) {
-      positions[j] = (positions[j] - cx) * scale;
-      positions[j + 1] = (positions[j + 1] - cy) * scale;
-      positions[j + 2] = (positions[j + 2] - cz) * scale;
+      var px = (positions[j] - cx) * scale;
+      var py = (positions[j + 1] - cy) * scale;
+      var pz = (positions[j + 2] - cz) * scale;
+      positions[j] = px; positions[j + 1] = py; positions[j + 2] = pz;
+      var d2 = px * px + py * py + pz * pz;
+      if (d2 > maxR) maxR = d2;
     }
+    return Math.sqrt(maxR);   // raza sferei care cuprinde tot modelul
   }
 
   /* ── shadere ─────────────────────────────── */
@@ -425,7 +430,23 @@
 
     var azimuth = opts.startAzimuth != null ? opts.startAzimuth : 25 * DEG;
     var polar = 8 * DEG;
+    var FOV = 32 * DEG;
+    var boundR = 1.0;         // raza modelului, aflată la încărcare
+    var fitPad = opts.pad || 1.16;
     var radius = 3.9;
+    var radiusScale = 1;      // apropierea cerută din afară, ca fracție
+
+    /* Distanța nu mai e un număr fix: o calculăm din mărimea modelului și
+       din unghiul mai strâmt dintre cel pe verticală și cel pe orizontală.
+       Altfel, la alt model sau la alt raport al cadrului, geanta iese din
+       chenar — exact ce s-a întâmplat. */
+    function fitRadius() {
+      var aspect = (canvas.clientWidth || 1) / (canvas.clientHeight || 1);
+      var halfV = FOV / 2;
+      var halfH = Math.atan(Math.tan(halfV) * aspect);
+      var half = Math.min(halfV, halfH);
+      radius = (boundR / Math.sin(half)) * fitPad * radiusScale;
+    }
 
     var minAz = opts.minAzimuth, maxAz = opts.maxAzimuth;
     var clamped = (minAz != null && maxAz != null);
@@ -514,10 +535,10 @@
     }
     var ro = null;
     if (window.ResizeObserver) {
-      ro = new ResizeObserver(function () { if (resize()) render(); });
+      ro = new ResizeObserver(function () { if (resize()) { fitRadius(); render(); } });
       ro.observe(canvas);
     } else {
-      window.addEventListener('resize', function () { if (resize()) render(); });
+      window.addEventListener('resize', function () { if (resize()) { fitRadius(); render(); } });
     }
 
     /* --- desenare --- */
@@ -602,7 +623,7 @@
       .then(function (buf) {
         if (disposed) return;
         var mesh = parseGLB(buf);
-        normalise(mesh.positions);
+        boundR = normalise(mesh.positions);
         var normals = computeNormals(mesh.positions, mesh.indices);
 
         var vs = compile(gl, gl.VERTEX_SHADER, VERT);
@@ -665,6 +686,7 @@
         gl.cullFace(gl.BACK);
 
         resize();
+        fitRadius();
         render();
         if (autoRotate) loop();
         if (opts.onReady) opts.onReady();
@@ -678,7 +700,7 @@
          Nu pornește nicio buclă: desenăm exact când ni se cere. */
       setOrbit: function (az, pol, dist) {
         if (pol != null) polar = Math.min(maxPolar, Math.max(minPolar, pol));
-        if (dist != null) radius = Math.max(2.6, Math.min(6.0, dist));
+        if (dist != null) { radiusScale = Math.max(0.72, Math.min(1.4, dist)); fitRadius(); }
         /* prima poziționare e instantanee; pe urmă alunecăm către ea,
            ca rotirea la scroll să nu tresară de la un cadru la altul */
         if (azimuth === undefined || target === null && Math.abs(az - azimuth) > Math.PI) {
