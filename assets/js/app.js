@@ -91,7 +91,7 @@
 
       'model.tab': 'Model 3D',
       'model.open': 'Vezi modelul 3D al gențile {name}',
-      'model.note': 'Model tridimensional al formei, pe care îl poți roti. Culoarea și materialul real se văd în fotografii.',
+      'model.note': 'Model tridimensional, pe care îl poți roti. Culorile și țesătura sunt apropiate de cele reale, dar așezarea exactă a peticelor se vede doar în fotografii.',
       'model.loading': 'Se încarcă modelul…',
       'model.error': 'Modelul nu a putut fi încărcat. Fotografiile sunt mai sus.',
 
@@ -176,7 +176,7 @@
 
       'model.tab': '3D model',
       'model.open': 'View the 3D model of the {name} bag',
-      'model.note': 'A three-dimensional model of the shape, which you can turn around. The real colours and fabric are in the photographs.',
+      'model.note': 'A three-dimensional model you can turn around. The colours and weave are close to the real thing, but the exact arrangement of the patches is only in the photographs.',
       'model.loading': 'Loading the model…',
       'model.error': 'The model could not be loaded. The photographs are above.',
 
@@ -398,6 +398,8 @@
     viewer = window.BagViewer.create(canvas, 'assets/models/' + p.model, {
       minAzimuth: p.modelFullRotation ? null : -limit,
       maxAzimuth: p.modelFullRotation ? null : limit,
+      tint: p.modelTint, tintAlt: p.modelTintAlt, tintAlt2: p.modelTintAlt2,
+      pattern: p.modelPattern,
       onReady: function () { status.remove(); wrap.classList.add('is-ready'); },
       onError: function () { status.textContent = t('model.error'); status.classList.add('is-error'); }
     });
@@ -717,9 +719,15 @@
     function start() {
       if (started) return;
       started = true;
+      var bag = null;
+      for (var i = 0; i < PRODUCTS.length; i++) {
+        if (PRODUCTS[i].model === MODEL) { bag = PRODUCTS[i]; break; }
+      }
       viewer = window.BagViewer.create(canvas, 'assets/models/' + MODEL, {
         interactive: false,
         autoRotate: false,
+        tint: bag && bag.modelTint, tintAlt: bag && bag.modelTintAlt,
+        tintAlt2: bag && bag.modelTintAlt2, pattern: bag && bag.modelPattern,
         onReady: function () { host.classList.add('is-ready'); progress = -1; measure(); },
         onError: stop
       });

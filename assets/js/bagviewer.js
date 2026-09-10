@@ -138,6 +138,7 @@
     var count = positions.length / 3;
     var sum = new Float32Array(positions.length);
     var hits = new Uint32Array(count);
+    var adjStart, adjList;
 
     function link(a, b) {
       sum[a * 3]     += positions[b * 3];
@@ -147,24 +148,57 @@
     }
     for (var i = 0; i < indices.length; i += 3) {
       var a = indices[i], b = indices[i + 1], c = indices[i + 2];
-      link(a, b); link(a, c);
-      link(b, a); link(b, c);
-      link(c, a); link(c, b);
+      link(a, b); link(a, c); link(b, a); link(b, c); link(c, a); link(c, b);
     }
 
-    var cavity = new Float32Array(count);
+    var raw = new Float32Array(count);
     for (var v = 0; v < count; v++) {
-      if (!hits[v]) { cavity[v] = 1; continue; }
+      if (!hits[v]) { raw[v] = 0; continue; }
       var dx = sum[v * 3] / hits[v] - positions[v * 3];
       var dy = sum[v * 3 + 1] / hits[v] - positions[v * 3 + 1];
       var dz = sum[v * 3 + 2] / hits[v] - positions[v * 3 + 2];
       var len = Math.sqrt(dx * dx + dy * dy + dz * dz);
-      if (len < 1e-8) { cavity[v] = 1; continue; }
-      /* proiecția pe normală: pozitiv = adâncitură, negativ = muchie ieșită */
-      var d = (dx * normals[v * 3] + dy * normals[v * 3 + 1] + dz * normals[v * 3 + 2]) / len;
-      var occ = Math.max(0, Math.min(1, d * 2.6));
-      var edge = Math.max(0, Math.min(1, -d * 1.5));
-      cavity[v] = 1 - occ * 0.72 + edge * 0.10;   // <1 în scobituri, >1 pe muchii
+      raw[v] = len < 1e-8 ? 0 :
+        (dx * normals[v * 3] + dy * normals[v * 3 + 1] + dz * normals[v * 3 + 2]) / len;
+    }
+
+    /* Reconstrucțiile din fotografii au triunghiuri neregulate, așa că
+       valoarea brută iese pătată. O netezim de câteva ori peste vecini:
+       rămâne ocluzia largă din scobituri și dispare zgomotul. */
+    adjStart = new Uint32Array(count + 1);
+    for (var t = 0; t < indices.length; t += 3) {
+      adjStart[indices[t]]++; adjStart[indices[t]]++;
+      adjStart[indices[t + 1]]++; adjStart[indices[t + 1]]++;
+      adjStart[indices[t + 2]]++; adjStart[indices[t + 2]]++;
+    }
+    var running = 0;
+    for (var k = 0; k <= count; k++) {
+      var n0 = k < count ? adjStart[k] : 0;
+      adjStart[k] = running; running += n0;
+    }
+    adjList = new Uint32Array(running);
+    var cursor = adjStart.slice();
+    function push(a, b) { adjList[cursor[a]++] = b; }
+    for (var t2 = 0; t2 < indices.length; t2 += 3) {
+      var x = indices[t2], y = indices[t2 + 1], z = indices[t2 + 2];
+      push(x, y); push(x, z); push(y, x); push(y, z); push(z, x); push(z, y);
+    }
+
+    var cur = raw, next = new Float32Array(count);
+    for (var pass = 0; pass < 4; pass++) {
+      for (var q = 0; q < count; q++) {
+        var acc = cur[q], n1 = 1;
+        for (var e = adjStart[q]; e < adjStart[q + 1]; e++) { acc += cur[adjList[e]]; n1++; }
+        next[q] = acc / n1;
+      }
+      var swap = cur; cur = next; next = swap;
+    }
+
+    /* doar întunecăm scobiturile, blând; muchiile rămân în pace */
+    var cavity = new Float32Array(count);
+    for (var w = 0; w < count; w++) {
+      var occ = Math.max(0, Math.min(1, cur[w] * 3.6));
+      cavity[w] = 1 - occ * 0.62;
     }
     return cavity;
   }
@@ -213,41 +247,102 @@
      și slab, plus o margine luminoasă care desprinde silueta de fundal.
      Luminile stau fixe în lume, nu pe cameră, ca rotirea să schimbe
      chiar relieful, nu doar unghiul. */
+  /* Lumină de studio: o cheie puternică din stânga-sus, o umplere rece
+     din dreapta, o margine care desprinde silueta de fundalul închis, și
+     o reflexie caldă de jos, ca de la o masă. La final trece printr-o
+     curbă filmică, ca luminile să nu se taie brusc în alb. */
+  /* Materialul e denim generat în shader și proiectat triplanar: din trei
+     direcții, amestecate după normală. Așa nu are nevoie de coordonate UV,
+     pe care modelele astea nu le au. Țesătura e twill diagonal, ca la blugi,
+     peste care vin fibre fine și o variație lentă de nuanță. */
   var FRAG = [
     'precision highp float;',
     'varying vec3 vNormal;',
     'varying vec3 vWorld;',
     'varying float vCavity;',
     'uniform vec3 uBase;',
+    'uniform vec3 uAlt;',
+    'uniform vec3 uAlt2;',
+    'uniform float uPattern;',
     'uniform vec3 uCam;',
+    '',
+    'float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }',
+    'float vnoise(vec2 p){',
+    '  vec2 i = floor(p), f = fract(p);',
+    '  f = f * f * (3.0 - 2.0 * f);',
+    '  return mix(mix(hash(i), hash(i + vec2(1.0,0.0)), f.x),',
+    '             mix(hash(i + vec2(0.0,1.0)), hash(i + vec2(1.0,1.0)), f.x), f.y);',
+    '}',
+    '',
+    /* twill: dungi diagonale, plus firele transversale abia ghicite */
+    'float weave(vec2 uv){',
+    '  float diag = (uv.x + uv.y) * 0.7071;',
+    '  float t = sin(diag * 210.0) * 0.5 + 0.5;',
+    '  t = pow(t, 1.6);',
+    '  float warp = sin(uv.x * 150.0) * 0.5 + 0.5;',
+    '  float weft = sin(uv.y * 150.0) * 0.5 + 0.5;',
+    '  float fibre = vnoise(uv * 420.0);',
+    '  return t * 0.62 + warp * 0.14 + weft * 0.10 + fibre * 0.14;',
+    '}',
+    '',
+    'vec3 filmic(vec3 x){',
+    '  vec3 a = x * (2.51 * x + 0.03);',
+    '  vec3 b = x * (2.43 * x + 0.59) + 0.14;',
+    '  return clamp(a / b, 0.0, 1.0);',
+    '}',
+    '',
     'void main(){',
     '  vec3 n = normalize(vNormal);',
     '  vec3 v = normalize(uCam - vWorld);',
-    '  vec3 key  = normalize(vec3( 0.38, 0.80,  0.52));',
-    '  vec3 fill = normalize(vec3(-0.70, 0.18,  0.42));',
-    '  vec3 rimL = normalize(vec3( 0.05,-0.25, -0.95));',
+    '  float ao = clamp(vCavity, 0.0, 1.0);',
     '',
-    '  float d = max(dot(n, key),  0.0);',
-    '  float f = max(dot(n, fill), 0.0);',
-    '  float b = max(dot(n, rimL), 0.0);',
+    /* proiecție triplanară: ponderi din normală */
+    '  vec3 an = abs(n);',
+    '  an = an / max(an.x + an.y + an.z, 0.0001);',
+    '  float w = weave(vWorld.yz) * an.x + weave(vWorld.xz) * an.y + weave(vWorld.xy) * an.z;',
     '',
-    /* cerul de deasupra e mai rece, podeaua reflectă mai cald */
+    /* culoarea: fie denim uniform, fie benzi pe înălțime, fie petice */
+    '  vec3 albedo = uBase;',
+    '  if (uPattern > 0.5 && uPattern < 1.5) {',
+    '    float band = floor(vWorld.y * 5.5 + vnoise(vWorld.xz * 2.0) * 0.35);',
+    '    albedo = mix(uBase, uAlt, fract(band * 0.37) );',
+    '  } else if (uPattern > 1.5) {',
+    '    vec3 cell = floor(vWorld * 1.9 + vnoise(vWorld.xy * 1.4) * 1.1);',
+    '    float k = fract(sin(dot(cell, vec3(12.99, 78.23, 37.71))) * 43758.5453);',
+    '    albedo = mix(uBase, uAlt, step(0.42, k));',
+    '    albedo = mix(albedo, uAlt2, step(0.74, k));',
+    '  }',
+    /* țesătura modulează culoarea, nu doar luminozitatea */
+    '  albedo *= 0.74 + w * 0.46;',
+    '  albedo *= 0.93 + vnoise(vWorld.xz * 9.0) * 0.14;',
+    '',
+    '  vec3 key  = normalize(vec3(-0.42, 0.78,  0.62));',
+    '  vec3 fill = normalize(vec3( 0.80, 0.10,  0.30));',
+    '  vec3 rimL = normalize(vec3( 0.30,-0.10, -0.92));',
+    '  vec3 bounce = normalize(vec3(-0.15,-0.95, 0.20));',
+    '',
+    '  float kd = max(dot(n, key),  0.0);',
+    '  float fd = max(dot(n, fill), 0.0);',
+    '  float rd = max(dot(n, rimL), 0.0);',
+    '  float bd = max(dot(n, bounce), 0.0);',
+    '',
     '  float sky = n.y * 0.5 + 0.5;',
-    '  vec3 ambient = mix(vec3(0.075,0.072,0.070), vec3(0.33,0.335,0.355), sky);',
-    '  ambient *= clamp(vCavity, 0.0, 1.25);',
+    '  vec3 ambient = mix(vec3(0.05,0.07,0.13), vec3(0.30,0.34,0.46), sky);',
     '',
-    /* luciu larg, ca de suprafață mată care abia întoarce lumina */
-    '  vec3 h = normalize(key + v);',
-    '  float spec = pow(max(dot(n, h), 0.0), 34.0) * 0.16;',
-    '  vec3 h2 = normalize(fill + v);',
-    '  spec += pow(max(dot(n, h2), 0.0), 22.0) * 0.05;',
+    '  vec3 lit = albedo * ambient * ao;',
+    '  lit += albedo * 1.55 * kd * mix(0.22, 1.0, ao);',
+    '  lit += albedo * vec3(0.72,0.80,1.00) * 0.30 * fd;',
+    '  lit += albedo * vec3(0.98,0.90,0.78) * 0.20 * bd * ao;',
     '',
-    /* margine subțire, doar cât să nu se piardă conturul */
-    '  float fres = pow(1.0 - max(dot(n, v), 0.0), 3.4) * 0.22;',
+    /* textilul are luciu slab și larg, nu reflexie de plastic */
+    '  vec3 h1 = normalize(key + v);',
+    '  float sheen = pow(max(dot(n, h1), 0.0), 20.0) * 0.030 * (0.4 + w * 0.6);',
+    '  lit += sheen * ao;',
     '',
-    '  vec3 col = uBase * (ambient + 0.54*d*clamp(vCavity,0.35,1.1) + 0.14*f + 0.08*b);',
-    '  col += spec + fres * vec3(0.86, 0.88, 0.95);',
-    '  gl_FragColor = vec4(pow(col, vec3(0.4545)), 1.0);',
+    '  float fres = pow(1.0 - max(dot(n, v), 0.0), 3.2);',
+    '  lit += fres * (0.015 + 0.13 * rd) * vec3(0.62, 0.76, 1.0);',
+    '',
+    '  gl_FragColor = vec4(pow(filmic(lit * 0.40), vec3(0.4545)), 1.0);',
     '}'
   ].join('\n');
 
@@ -288,8 +383,12 @@
 
   function create(canvas, url, opts) {
     opts = opts || {};
-    var gl = canvas.getContext('webgl', { antialias: true, alpha: true, premultipliedAlpha: false })
-          || canvas.getContext('experimental-webgl', { antialias: true, alpha: true });
+    var glOpts = { antialias: true, alpha: true, premultipliedAlpha: false };
+    /* doar pentru unelte de dezvoltare: păstrează pixelii ca să poată fi
+       citiți după desenare (are un mic cost, deci e oprit implicit) */
+    if (opts.capture) glOpts.preserveDrawingBuffer = true;
+    var gl = canvas.getContext('webgl', glOpts)
+          || canvas.getContext('experimental-webgl', glOpts);
     if (!gl) { if (opts.onError) opts.onError(new Error('WebGL indisponibil')); return null; }
 
     var disposed = false, frame = null, program = null;
@@ -492,9 +591,18 @@
           uProj: gl.getUniformLocation(prog, 'uProj'),
           uView: gl.getUniformLocation(prog, 'uView'),
           uBase: gl.getUniformLocation(prog, 'uBase'),
+          uAlt: gl.getUniformLocation(prog, 'uAlt'),
+          uAlt2: gl.getUniformLocation(prog, 'uAlt2'),
+          uPattern: gl.getUniformLocation(prog, 'uPattern'),
           uCam: gl.getUniformLocation(prog, 'uCam')
         };
-        gl.uniform3f(program.uBase, 0.84, 0.825, 0.80); // albedo liniar, alb cald
+        var tint = opts.tint || [0.16, 0.22, 0.36];
+        var alt  = opts.tintAlt || tint;
+        var alt2 = opts.tintAlt2 || alt;
+        gl.uniform3f(program.uBase, tint[0], tint[1], tint[2]);
+        gl.uniform3f(program.uAlt, alt[0], alt[1], alt[2]);
+        gl.uniform3f(program.uAlt2, alt2[0], alt2[1], alt2[2]);
+        gl.uniform1f(program.uPattern, opts.pattern || 0);
 
         var aPos = gl.getAttribLocation(prog, 'aPos');
         var aNormal = gl.getAttribLocation(prog, 'aNormal');
@@ -551,6 +659,15 @@
         }
       },
       isReady: function () { return !!program; },
+
+      /* pentru unelte: pune camera într-un unghi, desenează și întoarce
+         imaginea. Folosit ca să pot vedea ce randez. */
+      snapshot: function (az, pol, type, quality) {
+        azimuth = az; target = null; spinVel = 0;
+        if (pol != null) polar = pol;
+        render();
+        return canvas.toDataURL(type || 'image/jpeg', quality || 0.86);
+      },
 
       dispose: function () {
         if (disposed) return;

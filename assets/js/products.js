@@ -31,6 +31,11 @@ const PRODUCTS = [
     sold: false,
     model: 'buton.glb',
     modelFullRotation: true,  // tur complet; spatele e reconstruit mai slab, dar se vede tot
+    /* nuanțele reale ale gențile, în spațiu liniar; tiparul 2 = petice */
+    modelTint: [0.045, 0.070, 0.150],
+    modelTintAlt: [0.130, 0.180, 0.300],
+    modelTintAlt2: [0.250, 0.310, 0.420],
+    modelPattern: 2,
     ro: {
       tagline: 'Siluetă verticală, închidere clasică',
       description:
@@ -129,6 +134,10 @@ const PRODUCTS = [
     sold: false,
     model: 'nuante-de-gri.glb',
     modelFullRotation: true,
+    /* tiparul 1 = dungi orizontale, ca la geanta reală */
+    modelTint: [0.040, 0.043, 0.048],
+    modelTintAlt: [0.300, 0.310, 0.320],
+    modelPattern: 1,
     ro: {
       tagline: 'Volum și linii, pentru zilele pline',
       description:
@@ -155,6 +164,11 @@ const PRODUCTS = [
     sold: false,
     model: 'patchwork.glb',
     modelFullRotation: true,
+    /* albastru, roșu și crem, ca peticele din care e cusută */
+    modelTint: [0.055, 0.085, 0.175],
+    modelTintAlt: [0.235, 0.050, 0.062],
+    modelTintAlt2: [0.330, 0.300, 0.225],
+    modelPattern: 2,
     ro: {
       tagline: 'Prima geantă și primul proiect ambițios',
       description:
