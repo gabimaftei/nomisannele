@@ -668,8 +668,19 @@
       }
     }
 
+    /* Modelul pornește când secțiunea e aproape. Verificăm asta în două
+       feluri, ca să nu depindem de un singur mecanism: un
+       IntersectionObserver și, ca plasă, distanța calculată la fiecare
+       scroll. Dacă observatorul nu se declanșează, tot pornim. */
+    function maybeStart(rect) {
+      if (started) return;
+      var near = rect.top < window.innerHeight + 300 && rect.bottom > -300;
+      if (near) start();
+    }
+
     function measure() {
       var rect = host.getBoundingClientRect();
+      maybeStart(rect);
       var travel = host.offsetHeight - window.innerHeight;
       var p = travel > 0 ? (-rect.top) / travel : 0;
       p = Math.max(0, Math.min(1, p));
@@ -708,14 +719,12 @@
       window.addEventListener('resize', measure);
       measure();
 
-      /* modelul se descarcă abia când secțiunea se apropie de ecran */
+      /* observatorul e calea obișnuită; measure() de mai sus e plasa */
       if ('IntersectionObserver' in window) {
         var io = new IntersectionObserver(function (entries) {
           if (entries[0].isIntersecting) { io.disconnect(); start(); }
         }, { rootMargin: '300px 0px' });
         io.observe(host);
-      } else {
-        start();
       }
     }
 
