@@ -255,14 +255,18 @@
      direcții, amestecate după normală. Așa nu are nevoie de coordonate UV,
      pe care modelele astea nu le au. Țesătura e twill diagonal, ca la blugi,
      peste care vin fibre fine și o variație lentă de nuanță. */
+  /* Denim generat în shader, proiectat triplanar (modelele n-au UV-uri).
+     Cheia realismului e că țesătura clatină NORMALA, nu doar culoarea:
+     abia atunci firele prind lumina ca o pânză adevărată. Detaliul se
+     stinge singur când ajunge sub un pixel, ca să nu apară moar. */
   var FRAG = [
+    '#extension GL_OES_standard_derivatives : enable',
     'precision highp float;',
     'varying vec3 vNormal;',
     'varying vec3 vWorld;',
     'varying float vCavity;',
     'uniform vec3 uBase;',
     'uniform vec3 uAlt;',
-    'uniform vec3 uAlt2;',
     'uniform float uPattern;',
     'uniform vec3 uCam;',
     '',
@@ -274,15 +278,17 @@
     '             mix(hash(i + vec2(0.0,1.0)), hash(i + vec2(1.0,1.0)), f.x), f.y);',
     '}',
     '',
-    /* twill: dungi diagonale, plus firele transversale abia ghicite */
-    'float weave(vec2 uv){',
-    '  float diag = (uv.x + uv.y) * 0.7071;',
-    '  float t = sin(diag * 210.0) * 0.5 + 0.5;',
-    '  t = pow(t, 1.6);',
-    '  float warp = sin(uv.x * 150.0) * 0.5 + 0.5;',
-    '  float weft = sin(uv.y * 150.0) * 0.5 + 0.5;',
-    '  float fibre = vnoise(uv * 420.0);',
-    '  return t * 0.62 + warp * 0.14 + weft * 0.10 + fibre * 0.14;',
+    /* Twill: coastele diagonale ale blugilor, plus fire mai groase și mai
+       subțiri (slub), care sunt semnul distinctiv al denimului. */
+    'float weave(vec2 uv, float fade){',
+    '  float diag = (uv.x * 0.86 + uv.y * 0.51);',
+    '  float rib  = sin(diag * 190.0) * 0.5 + 0.5;',
+    '  rib = pow(rib, 1.35);',
+    '  float weft = sin(uv.y * 118.0) * 0.5 + 0.5;',
+    '  float slub = vnoise(vec2(uv.x * 26.0, uv.y * 3.0));',
+    '  float fibre = vnoise(uv * 310.0);',
+    '  float w = rib * 0.60 + weft * 0.09 + fibre * 0.18 + slub * 0.13;',
+    '  return mix(0.5, w, fade);',
     '}',
     '',
     'vec3 filmic(vec3 x){',
@@ -296,53 +302,73 @@
     '  vec3 v = normalize(uCam - vWorld);',
     '  float ao = clamp(vCavity, 0.0, 1.0);',
     '',
-    /* proiecție triplanară: ponderi din normală */
+    /* alegem planul cel mai potrivit; e de trei ori mai ieftin decât
+       amestecul complet și arată la fel pe o suprafață curbă */
     '  vec3 an = abs(n);',
-    '  an = an / max(an.x + an.y + an.z, 0.0001);',
-    '  float w = weave(vWorld.yz) * an.x + weave(vWorld.xz) * an.y + weave(vWorld.xy) * an.z;',
-    '',
-    /* culoarea: fie denim uniform, fie benzi pe înălțime, fie petice */
-    '  vec3 albedo = uBase;',
-    '  if (uPattern > 0.5 && uPattern < 1.5) {',
-    '    float band = floor(vWorld.y * 5.5 + vnoise(vWorld.xz * 2.0) * 0.35);',
-    '    albedo = mix(uBase, uAlt, fract(band * 0.37) );',
-    '  } else if (uPattern > 1.5) {',
-    '    vec3 cell = floor(vWorld * 1.9 + vnoise(vWorld.xy * 1.4) * 1.1);',
-    '    float k = fract(sin(dot(cell, vec3(12.99, 78.23, 37.71))) * 43758.5453);',
-    '    albedo = mix(uBase, uAlt, step(0.42, k));',
-    '    albedo = mix(albedo, uAlt2, step(0.74, k));',
+    '  vec2 uv; vec3 tangent, bitan;',
+    '  if (an.x >= an.y && an.x >= an.z) {',
+    '    uv = vWorld.zy; tangent = vec3(0.0,0.0,1.0); bitan = vec3(0.0,1.0,0.0);',
+    '  } else if (an.y >= an.z) {',
+    '    uv = vWorld.xz; tangent = vec3(1.0,0.0,0.0); bitan = vec3(0.0,0.0,1.0);',
+    '  } else {',
+    '    uv = vWorld.xy; tangent = vec3(1.0,0.0,0.0); bitan = vec3(0.0,1.0,0.0);',
     '  }',
-    /* țesătura modulează culoarea, nu doar luminozitatea */
-    '  albedo *= 0.74 + w * 0.46;',
-    '  albedo *= 0.93 + vnoise(vWorld.xz * 9.0) * 0.14;',
     '',
-    '  vec3 key  = normalize(vec3(-0.42, 0.78,  0.62));',
-    '  vec3 fill = normalize(vec3( 0.80, 0.10,  0.30));',
-    '  vec3 rimL = normalize(vec3( 0.30,-0.10, -0.92));',
+    /* cât de mare e un pixel în unități de lume: sub asta, stingem detaliul */
+    '  float px = fwidth(uv.x) + fwidth(uv.y);',
+    '  float fade = clamp(1.0 - px * 95.0, 0.0, 1.0);',
+    '',
+    '  float e = 0.0016;',
+    '  float w0 = weave(uv, fade);',
+    '  float wx = weave(uv + vec2(e, 0.0), fade);',
+    '  float wy = weave(uv + vec2(0.0, e), fade);',
+    '',
+    /* firele înclină normala; de aici vine senzația de textil */
+    '  float bump = 0.055 * fade;',
+    '  vec3 nb = normalize(n - tangent * ((wx - w0) / e) * bump',
+    '                        - bitan  * ((wy - w0) / e) * bump);',
+    '',
+    '  vec3 albedo = uBase;',
+    '  if (uPattern > 0.5) {',
+    /* dungi pe înălțime, ca la geanta cu nuanțe de gri */
+    '    float band = vWorld.y * 4.6 + vnoise(vWorld.xz * 1.8) * 0.25;',
+    '    float k = fract(band);',
+    '    float step1 = smoothstep(0.06, 0.12, k) * (1.0 - smoothstep(0.48, 0.54, k));',
+    '    albedo = mix(uBase, uAlt, step1);',
+    '  }',
+    /* țesătura schimbă și culoarea, dar discret */
+    '  albedo *= 0.86 + w0 * 0.26;',
+    '  albedo *= 0.95 + vnoise(vWorld.xz * 7.0) * 0.10;',
+    /* blugii se albesc pe muchii și pe cusături, unde se freacă */
+    '  float wear = smoothstep(0.55, 1.0, ao) * (0.35 + 0.65 * vnoise(vWorld.xy * 3.4));',
+    '  albedo = mix(albedo, albedo * 1.55 + vec3(0.030,0.034,0.040), wear * 0.42);',
+    '',
+    '  vec3 key    = normalize(vec3(-0.42, 0.78,  0.62));',
+    '  vec3 fill   = normalize(vec3( 0.80, 0.10,  0.30));',
+    '  vec3 rimL   = normalize(vec3( 0.30,-0.10, -0.92));',
     '  vec3 bounce = normalize(vec3(-0.15,-0.95, 0.20));',
     '',
-    '  float kd = max(dot(n, key),  0.0);',
-    '  float fd = max(dot(n, fill), 0.0);',
-    '  float rd = max(dot(n, rimL), 0.0);',
-    '  float bd = max(dot(n, bounce), 0.0);',
+    '  float kd = max(dot(nb, key),  0.0);',
+    '  float fd = max(dot(nb, fill), 0.0);',
+    '  float rd = max(dot(nb, rimL), 0.0);',
+    '  float bd = max(dot(nb, bounce), 0.0);',
     '',
-    '  float sky = n.y * 0.5 + 0.5;',
-    '  vec3 ambient = mix(vec3(0.05,0.07,0.13), vec3(0.30,0.34,0.46), sky);',
+    '  float sky = nb.y * 0.5 + 0.5;',
+    '  vec3 ambient = mix(vec3(0.055,0.075,0.135), vec3(0.34,0.38,0.50), sky);',
     '',
     '  vec3 lit = albedo * ambient * ao;',
-    '  lit += albedo * 1.55 * kd * mix(0.22, 1.0, ao);',
-    '  lit += albedo * vec3(0.72,0.80,1.00) * 0.30 * fd;',
-    '  lit += albedo * vec3(0.98,0.90,0.78) * 0.20 * bd * ao;',
+    '  lit += albedo * 1.62 * kd * mix(0.24, 1.0, ao);',
+    '  lit += albedo * vec3(0.70,0.79,1.00) * 0.34 * fd;',
+    '  lit += albedo * vec3(0.99,0.91,0.78) * 0.20 * bd * ao;',
     '',
-    /* textilul are luciu slab și larg, nu reflexie de plastic */
-    '  vec3 h1 = normalize(key + v);',
-    '  float sheen = pow(max(dot(n, h1), 0.0), 20.0) * 0.030 * (0.4 + w * 0.6);',
-    '  lit += sheen * ao;',
+    /* Sheen de textil: pânza se luminează la margini, nu în centru.
+       Fără asta arată a plastic vopsit. */
+    '  float nv = max(dot(nb, v), 0.0);',
+    '  float sheen = pow(1.0 - nv, 3.6) * (0.30 + 0.55 * max(dot(nb, key), 0.0));',
+    '  lit += sheen * albedo * 1.5 * ao;',
+    '  lit += pow(1.0 - nv, 4.5) * (0.010 + 0.075 * rd) * vec3(0.66, 0.78, 1.0);',
     '',
-    '  float fres = pow(1.0 - max(dot(n, v), 0.0), 3.2);',
-    '  lit += fres * (0.015 + 0.13 * rd) * vec3(0.62, 0.76, 1.0);',
-    '',
-    '  gl_FragColor = vec4(pow(filmic(lit * 0.40), vec3(0.4545)), 1.0);',
+    '  gl_FragColor = vec4(pow(filmic(lit * 0.44), vec3(0.4545)), 1.0);',
     '}'
   ].join('\n');
 
@@ -390,6 +416,8 @@
     var gl = canvas.getContext('webgl', glOpts)
           || canvas.getContext('experimental-webgl', glOpts);
     if (!gl) { if (opts.onError) opts.onError(new Error('WebGL indisponibil')); return null; }
+    /* derivatele sunt necesare shaderului, deci se cer înainte de compilare */
+    gl.getExtension('OES_standard_derivatives');
 
     var disposed = false, frame = null, program = null;
     var buffers = {};
@@ -472,7 +500,7 @@
     /* --- redimensionare --- */
     var lastW = 0, lastH = 0;
     function resize() {
-      var dpr = Math.min((window.devicePixelRatio || 1) * 1.3, 2.6);
+      var dpr = Math.min((window.devicePixelRatio || 1) * 1.15, 2.2);
       var w = Math.round(canvas.clientWidth * dpr);
       var h = Math.round(canvas.clientHeight * dpr);
       if (!w || !h) return false;
@@ -648,8 +676,9 @@
     return {
       /* Poziționează camera din afară (folosit de secțiunea cu scroll).
          Nu pornește nicio buclă: desenăm exact când ni se cere. */
-      setOrbit: function (az, pol) {
+      setOrbit: function (az, pol, dist) {
         if (pol != null) polar = Math.min(maxPolar, Math.max(minPolar, pol));
+        if (dist != null) radius = Math.max(2.6, Math.min(6.0, dist));
         /* prima poziționare e instantanee; pe urmă alunecăm către ea,
            ca rotirea la scroll să nu tresară de la un cadru la altul */
         if (azimuth === undefined || target === null && Math.abs(az - azimuth) > Math.PI) {

@@ -591,13 +591,15 @@ section[id]{ scroll-margin-top:calc(var(--navh) + 12px); }
   position:sticky; top:var(--navh);
   height:calc(100svh - var(--navh));
   display:grid; grid-template-columns:1.05fr .95fr;
-  align-items:center; gap:clamp(20px,4vw,64px);
+  grid-template-rows:auto auto;
+  align-items:center; align-content:center; gap:0 clamp(20px,4vw,64px);
   padding:0 var(--pad);
   max-width:var(--wrap); margin:0 auto;
 }
 
 .orbit__stage{
-  position:relative; height:min(74%, 620px);
+  grid-column:1; grid-row:1;
+  position:relative; height:min(68vh, 560px);
   border-radius:4px; overflow:hidden;
   background:
     radial-gradient(120% 95% at 50% 8%, #fdfbf7 0%, #f2ece3 48%, #e4d9c9 100%);
@@ -616,17 +618,20 @@ section[id]{ scroll-margin-top:calc(var(--navh) + 12px); }
 }
 .orbit.is-ready .orbit__stage::before{ opacity:1; }
 
+/* indiciul stă sub scenă, nu peste geantă */
 .orbit__hint{
-  position:absolute; left:0; right:0; bottom:12px; margin:0;
-  color:var(--ink-faint);
-  text-align:center; font-size:11px; letter-spacing:.18em;
+  grid-column:1; margin:14px 0 0; color:var(--ink-faint);
+  text-align:center; font-size:10.5px; letter-spacing:.2em;
   text-transform:uppercase;
   opacity:0; transition:opacity .7s var(--ease);
 }
 .orbit.is-ready .orbit__hint{ opacity:1; }
 
 /* Pașii stau unul peste altul și se schimbă între ei. */
-.orbit__steps{ position:relative; list-style:none; margin:0; padding:0; min-height:270px; }
+.orbit__steps{
+  grid-column:2; grid-row:1 / span 2;
+  position:relative; list-style:none; margin:0; padding:0; min-height:270px;
+}
 .orbit__step{
   position:absolute; inset:0;
   display:flex; flex-direction:column; justify-content:center;
@@ -665,7 +670,9 @@ section[id]{ scroll-margin-top:calc(var(--navh) + 12px); }
     grid-template-columns:1fr; align-content:center;
     gap:8px; padding:0 var(--pad);
   }
-  .orbit__stage{ height:min(46svh, 380px); }
+  .orbit__stage{ grid-column:1; height:min(44svh, 360px); }
+  .orbit__steps{ grid-column:1; grid-row:auto; }
+  .orbit__hint{ margin:10px 0 4px; }
   .orbit__steps{ min-height:190px; }
   .orbit__step{ text-align:center; align-items:center; }
   .orbit__step p{ margin-inline:auto; }

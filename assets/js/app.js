@@ -96,7 +96,7 @@
       'model.error': 'Modelul nu a putut fi încărcat. Fotografiile sunt mai sus.',
 
       'orbit.hint': 'Derulează ca să întorci geanta',
-      'orbit.alt': 'Geanta Patchwork, în trei dimensiuni, care se rotește pe măsură ce derulezi',
+      'orbit.alt': 'Geanta Nuanțe de gri, în trei dimensiuni, care se rotește pe măsură ce derulezi',
     },
 
     en: {
@@ -181,7 +181,7 @@
       'model.error': 'The model could not be loaded. The photographs are above.',
 
       'orbit.hint': 'Scroll to turn the bag',
-      'orbit.alt': 'The Patchwork bag in three dimensions, turning as you scroll',
+      'orbit.alt': 'The Nuanțe de gri bag in three dimensions, turning as you scroll',
     },
   };
 
@@ -644,7 +644,7 @@
     if (!host || !stat) return null;
 
     var STEPS = 4;
-    var MODEL = 'patchwork.glb';   // se rotește complet și are cele mai multe detalii
+    var MODEL = 'nuante-de-gri.glb';   // dungile ei sunt reale, iar geometria ține turul complet
 
     var canvas = $('#orbit-canvas');
     var stepsBox = $('#orbit-steps');
@@ -689,8 +689,16 @@
       }
       setVar('--orbit-progress', p.toFixed(4));
       if (viewer && viewer.isReady()) {
-        /* o tură completă pe toată înălțimea secțiunii */
-        viewer.setOrbit(0.5 + p * Math.PI * 2, -0.06 + Math.sin(p * Math.PI) * 0.12);
+        /* o tură completă pe toată înălțimea secțiunii, plus o apropiere
+           lentă la mijloc și o ușoară plecare a camerei — mișcarea aia
+           mică de dolly e ce face diferența dintre „se rotește ceva" și
+           „cineva a filmat obiectul" */
+        var ease = Math.sin(p * Math.PI);
+        viewer.setOrbit(
+          0.5 + p * Math.PI * 2,
+          -0.10 + ease * 0.20,
+          4.15 - ease * 0.55
+        );
       }
     }
 
