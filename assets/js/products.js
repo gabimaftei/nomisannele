@@ -30,7 +30,7 @@ const PRODUCTS = [
     badge: null,
     sold: false,
     model: 'buton.glb',
-    modelFullRotation: false, // spatele e reconstruit prost, se rotește doar în față
+    modelFullRotation: true,  // tur complet; spatele e reconstruit mai slab, dar se vede tot
     ro: {
       tagline: 'Siluetă verticală, închidere clasică',
       description:

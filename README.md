@@ -187,12 +187,15 @@ photographs. Do not remove that note.
 The models were also reconstructed from photographs, so they are not equally
 accurate all the way round:
 
-| model | rotation |
-|---|---|
-| `patchwork.glb`, `nuante-de-gri.glb` | holds up from every side — free rotation |
-| `buton.glb` | the back is invented and mushy — limited to ±72° from the front |
+All three now turn a full 360°. Buton used to be capped at ±72° because its
+back is the weakest part of the reconstruction, but half a turn is not a 3D view,
+so the cap is gone. Its back is softer than its front; that is the honest state of
+the model, not a bug to hide. The `modelFullRotation` flag is still there if you
+ever want to cap a future model.
 
-That limit is the `modelFullRotation: false` flag in `products.js`.
+Dragging is scaled to the canvas: a swipe across the full width is exactly one
+complete turn, on a phone and on a desktop alike. Letting go keeps the spin going
+and eases it down.
 
 ### The scroll section
 
@@ -264,6 +267,11 @@ On top of that:
   `assets/fonts/` rather than loaded from Google. That means no visitor data
   leaves the site, which also keeps it clear of the GDPR problems that using
   Google Fonts directly has caused for EU sites. Licences are in `assets/fonts/OFL.txt`.
+- **No inline styles, even from script.** `style-src 'self'` blocks any style
+  written onto an element from JavaScript, which the scroll-progress rail and the
+  modal's scroll lock both need. Rather than loosening the policy, those two values
+  live in a stylesheet constructed in code (`adoptedStyleSheets`), which the policy
+  does not treat as inline. The policy stays strict and the features still work.
 - **A Content-Security-Policy** in the page head restricts everything to `'self'`.
   If someone ever managed to inject a script or a tracking pixel, the browser would
   refuse to run it. `connect-src 'self'` allows exactly one kind of network call:

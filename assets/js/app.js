@@ -202,6 +202,30 @@
     return Array.prototype.slice.call((root || document).querySelectorAll(sel));
   }
 
+  /* Politica de securitate blochează stilurile puse direct pe element
+     (style-src 'self'), iar noi avem două valori care chiar trebuie să se
+     schimbe din cod. Le ținem într-o foaie de stil construită din script:
+     pe aceea CSP n-o consideră „inline", deci rămâne strictă și merge. */
+  var liveSheet = (function () {
+    if (typeof CSSStyleSheet === 'undefined' || !('adoptedStyleSheets' in document)) return null;
+    try {
+      var sheet = new CSSStyleSheet();
+      document.adoptedStyleSheets = [].concat(document.adoptedStyleSheets || [], sheet);
+      return sheet;
+    } catch (e) { return null; }
+  })();
+
+  var liveVars = { '--scroll-lock': '0px', '--orbit-progress': '0' };
+  function setVar(name, value) {
+    liveVars[name] = value;
+    if (!liveSheet) return;
+    var body = '';
+    for (var key in liveVars) {
+      if (Object.prototype.hasOwnProperty.call(liveVars, key)) body += key + ':' + liveVars[key] + ';';
+    }
+    try { liveSheet.replaceSync(':root{' + body + '}'); } catch (e) { /* ignoră */ }
+  }
+
   function el(tag, className, text) {
     var node = document.createElement(tag);
     if (className) node.className = className;
@@ -499,7 +523,7 @@
     scrollLock = window.scrollY;
     modal.hidden = false;
     document.body.classList.add('is-locked');
-    document.body.style.top = '-' + scrollLock + 'px';
+    setVar('--scroll-lock', '-' + scrollLock + 'px');
     backgroundRegions().forEach(function (r) { r.inert = true; });
     var first = $('.modal__close', modal);
     if (first) first.focus();
@@ -509,7 +533,7 @@
     if (modal === productModal) disposeViewer();
     modal.hidden = true;
     document.body.classList.remove('is-locked');
-    document.body.style.top = '';
+    setVar('--scroll-lock', '0px');
     backgroundRegions().forEach(function (r) { r.inert = false; });
     window.scrollTo(0, scrollLock);
     if (lastFocus && lastFocus.focus) lastFocus.focus();
@@ -661,7 +685,7 @@
           n.classList.toggle('is-on', i === idx);
         });
       }
-      if (railFill) railFill.style.transform = 'scaleY(' + p.toFixed(4) + ')';
+      setVar('--orbit-progress', p.toFixed(4));
       if (viewer && viewer.isReady()) {
         /* o tură completă pe toată înălțimea secțiunii */
         viewer.setOrbit(0.5 + p * Math.PI * 2, -0.06 + Math.sin(p * Math.PI) * 0.12);

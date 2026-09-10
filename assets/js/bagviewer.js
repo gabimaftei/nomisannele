@@ -128,6 +128,47 @@
     return normals;
   }
 
+  /* Ocluzie ambientală ieftină, dedusă din forma suprafeței.
+     Pentru fiecare vârf comparăm poziția lui cu media vecinilor: dacă
+     vecinii stau „deasupra" lui pe direcția normalei, vârful e într-o
+     adâncitură și primește mai puțină lumină. Fără raze, fără structuri
+     de accelerare — dar exact asta scoate cusăturile și buzunarele în
+     relief, care sunt tot ce are de arătat o geantă albă. */
+  function computeCavity(positions, normals, indices) {
+    var count = positions.length / 3;
+    var sum = new Float32Array(positions.length);
+    var hits = new Uint32Array(count);
+
+    function link(a, b) {
+      sum[a * 3]     += positions[b * 3];
+      sum[a * 3 + 1] += positions[b * 3 + 1];
+      sum[a * 3 + 2] += positions[b * 3 + 2];
+      hits[a]++;
+    }
+    for (var i = 0; i < indices.length; i += 3) {
+      var a = indices[i], b = indices[i + 1], c = indices[i + 2];
+      link(a, b); link(a, c);
+      link(b, a); link(b, c);
+      link(c, a); link(c, b);
+    }
+
+    var cavity = new Float32Array(count);
+    for (var v = 0; v < count; v++) {
+      if (!hits[v]) { cavity[v] = 1; continue; }
+      var dx = sum[v * 3] / hits[v] - positions[v * 3];
+      var dy = sum[v * 3 + 1] / hits[v] - positions[v * 3 + 1];
+      var dz = sum[v * 3 + 2] / hits[v] - positions[v * 3 + 2];
+      var len = Math.sqrt(dx * dx + dy * dy + dz * dz);
+      if (len < 1e-8) { cavity[v] = 1; continue; }
+      /* proiecția pe normală: pozitiv = adâncitură, negativ = muchie ieșită */
+      var d = (dx * normals[v * 3] + dy * normals[v * 3 + 1] + dz * normals[v * 3 + 2]) / len;
+      var occ = Math.max(0, Math.min(1, d * 2.6));
+      var edge = Math.max(0, Math.min(1, -d * 1.5));
+      cavity[v] = 1 - occ * 0.72 + edge * 0.10;   // <1 în scobituri, >1 pe muchii
+    }
+    return cavity;
+  }
+
   /* Centrăm modelul în origine și îl aducem la o mărime constantă,
      ca toate gențile să apară la fel de mari, oricât ar diferi scara. */
   function normalise(positions) {
@@ -154,34 +195,58 @@
   var VERT = [
     'attribute vec3 aPos;',
     'attribute vec3 aNormal;',
+    'attribute float aCavity;',
     'uniform mat4 uProj;',
     'uniform mat4 uView;',
     'varying vec3 vNormal;',
+    'varying vec3 vWorld;',
+    'varying float vCavity;',
     'void main(){',
     '  vNormal = aNormal;',
+    '  vWorld = aPos;',
+    '  vCavity = aCavity;',
     '  gl_Position = uProj * uView * vec4(aPos, 1.0);',
     '}'
   ].join('\n');
 
-  /* Lumina stă fixă în lume, nu pe cameră: așa, când rotești geanta,
-     relieful cusăturilor chiar se schimbă și se citește forma. */
+  /* Materialul imită gipsul vopsit: difuz aproape mat, cu un luciu larg
+     și slab, plus o margine luminoasă care desprinde silueta de fundal.
+     Luminile stau fixe în lume, nu pe cameră, ca rotirea să schimbe
+     chiar relieful, nu doar unghiul. */
   var FRAG = [
-    'precision mediump float;',
+    'precision highp float;',
     'varying vec3 vNormal;',
+    'varying vec3 vWorld;',
+    'varying float vCavity;',
     'uniform vec3 uBase;',
+    'uniform vec3 uCam;',
     'void main(){',
     '  vec3 n = normalize(vNormal);',
-    '  vec3 key  = normalize(vec3( 0.35, 0.75,  0.55));',
-    '  vec3 fill = normalize(vec3(-0.65, 0.15,  0.35));',
-    '  vec3 back = normalize(vec3( 0.10,-0.30, -0.90));',
+    '  vec3 v = normalize(uCam - vWorld);',
+    '  vec3 key  = normalize(vec3( 0.38, 0.80,  0.52));',
+    '  vec3 fill = normalize(vec3(-0.70, 0.18,  0.42));',
+    '  vec3 rimL = normalize(vec3( 0.05,-0.25, -0.95));',
+    '',
     '  float d = max(dot(n, key),  0.0);',
     '  float f = max(dot(n, fill), 0.0);',
-    '  float b = max(dot(n, back), 0.0);',
-    /* Totul se adună în spațiu liniar și abia la final trece în sRGB.
-       Altfel imaginea iese spălăcită și relieful cusăturilor dispare. */
+    '  float b = max(dot(n, rimL), 0.0);',
+    '',
+    /* cerul de deasupra e mai rece, podeaua reflectă mai cald */
     '  float sky = n.y * 0.5 + 0.5;',
-    '  vec3 ambient = mix(vec3(0.085,0.082,0.078), vec3(0.34,0.34,0.355), sky);',
-    '  vec3 col = uBase * (ambient + 0.56*d + 0.13*f + 0.07*b);',
+    '  vec3 ambient = mix(vec3(0.075,0.072,0.070), vec3(0.33,0.335,0.355), sky);',
+    '  ambient *= clamp(vCavity, 0.0, 1.25);',
+    '',
+    /* luciu larg, ca de suprafață mată care abia întoarce lumina */
+    '  vec3 h = normalize(key + v);',
+    '  float spec = pow(max(dot(n, h), 0.0), 34.0) * 0.16;',
+    '  vec3 h2 = normalize(fill + v);',
+    '  spec += pow(max(dot(n, h2), 0.0), 22.0) * 0.05;',
+    '',
+    /* margine subțire, doar cât să nu se piardă conturul */
+    '  float fres = pow(1.0 - max(dot(n, v), 0.0), 3.4) * 0.22;',
+    '',
+    '  vec3 col = uBase * (ambient + 0.54*d*clamp(vCavity,0.35,1.1) + 0.14*f + 0.08*b);',
+    '  col += spec + fres * vec3(0.86, 0.88, 0.95);',
     '  gl_FragColor = vec4(pow(col, vec3(0.4545)), 1.0);',
     '}'
   ].join('\n');
@@ -240,6 +305,8 @@
     var minPolar = -22 * DEG, maxPolar = 32 * DEG;
 
     var spin = 1;
+    var spinVel = 0;          // viteza rămasă după ce ai ridicat degetul
+    var target = null;        // ținta către care alunecăm (folosit de scroll)
     var reduceMotion = false;
     try {
       reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -260,8 +327,12 @@
       if (!dragging || (pointerId !== null && e.pointerId !== pointerId)) return;
       var dx = e.clientX - lastX, dy = e.clientY - lastY;
       lastX = e.clientX; lastY = e.clientY;
-      azimuth += dx * 0.0075;
-      polar += dy * 0.005;
+      /* un tur întreg la o glisare cât lățimea zonei: la fel de firesc
+         pe telefon ca pe desktop, fără constantă aleasă din burtă */
+      var perPx = TAU / Math.max(240, canvas.clientWidth);
+      azimuth += dx * perPx;
+      polar += dy * perPx * 0.42;
+      spinVel = dx * perPx;
       if (clamped) azimuth = Math.min(maxAz, Math.max(minAz, azimuth));
       polar = Math.min(maxPolar, Math.max(minPolar, polar));
       render();
@@ -269,6 +340,7 @@
     function onUp(e) {
       if (!dragging) return;
       dragging = false; pointerId = null;
+      if (Math.abs(spinVel) > 0.0012) glide();
       canvas.classList.remove('is-grabbing');
       if (canvas.releasePointerCapture && e.pointerId != null) {
         try { canvas.releasePointerCapture(e.pointerId); } catch (err) {}
@@ -301,7 +373,7 @@
     /* --- redimensionare --- */
     var lastW = 0, lastH = 0;
     function resize() {
-      var dpr = Math.min(window.devicePixelRatio || 1, 2);
+      var dpr = Math.min((window.devicePixelRatio || 1) * 1.3, 2.6);
       var w = Math.round(canvas.clientWidth * dpr);
       var h = Math.round(canvas.clientHeight * dpr);
       if (!w || !h) return false;
@@ -335,7 +407,50 @@
       gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
       gl.uniformMatrix4fv(program.uProj, false, proj);
       gl.uniformMatrix4fv(program.uView, false, view);
+      /* poziția camerei în lume, dedusă din unghiuri: luciul și marginea
+         au nevoie de direcția reală de privire */
+      var cp2 = Math.cos(polar), sp2 = Math.sin(polar);
+      var ca2 = Math.cos(azimuth), sa2 = Math.sin(azimuth);
+      gl.uniform3f(program.uCam, -radius * cp2 * sa2, radius * sp2, radius * cp2 * ca2);
       gl.drawElements(gl.TRIANGLES, indexCount, indexType, 0);
+    }
+
+    /* O singură buclă scurtă, folosită de două lucruri: inerția de după
+       glisare și alunecarea lină către poziția cerută de scroll. Pornește
+       doar când are treabă și se oprește singură. */
+    var gliding = false;
+    function glide() {
+      if (gliding || disposed) return;
+      gliding = true;
+      (function step() {
+        if (disposed) { gliding = false; return; }
+        var busy = false;
+
+        if (target != null) {
+          var diff = target - azimuth;
+          if (Math.abs(diff) > 0.0009) {
+            azimuth += diff * 0.16;      // urmărire moale, fără salturi
+            busy = true;
+          } else {
+            azimuth = target; target = null;
+          }
+        }
+        if (!dragging && Math.abs(spinVel) > 0.0009) {
+          azimuth += spinVel;
+          spinVel *= 0.93;               // frecare
+          if (clamped) {
+            if (azimuth >= maxAz || azimuth <= minAz) spinVel = 0;
+          }
+          busy = true;
+        } else if (!dragging) {
+          spinVel = 0;
+        }
+
+        if (clamped) azimuth = Math.min(maxAz, Math.max(minAz, azimuth));
+        render();
+        if (busy) window.requestAnimationFrame(step);
+        else gliding = false;
+      })();
     }
 
     function loop() {
@@ -376,7 +491,8 @@
           handle: prog,
           uProj: gl.getUniformLocation(prog, 'uProj'),
           uView: gl.getUniformLocation(prog, 'uView'),
-          uBase: gl.getUniformLocation(prog, 'uBase')
+          uBase: gl.getUniformLocation(prog, 'uBase'),
+          uCam: gl.getUniformLocation(prog, 'uCam')
         };
         gl.uniform3f(program.uBase, 0.84, 0.825, 0.80); // albedo liniar, alb cald
 
@@ -394,6 +510,13 @@
         gl.bufferData(gl.ARRAY_BUFFER, normals, gl.STATIC_DRAW);
         gl.enableVertexAttribArray(aNormal);
         gl.vertexAttribPointer(aNormal, 3, gl.FLOAT, false, 0, 0);
+
+        var aCavity = gl.getAttribLocation(prog, 'aCavity');
+        buffers.cavity = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, buffers.cavity);
+        gl.bufferData(gl.ARRAY_BUFFER, computeCavity(mesh.positions, normals, mesh.indices), gl.STATIC_DRAW);
+        gl.enableVertexAttribArray(aCavity);
+        gl.vertexAttribPointer(aCavity, 1, gl.FLOAT, false, 0, 0);
 
         buffers.index = gl.createBuffer();
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buffers.index);
@@ -418,9 +541,14 @@
       /* Poziționează camera din afară (folosit de secțiunea cu scroll).
          Nu pornește nicio buclă: desenăm exact când ni se cere. */
       setOrbit: function (az, pol) {
-        azimuth = az;
         if (pol != null) polar = Math.min(maxPolar, Math.max(minPolar, pol));
-        render();
+        /* prima poziționare e instantanee; pe urmă alunecăm către ea,
+           ca rotirea la scroll să nu tresară de la un cadru la altul */
+        if (azimuth === undefined || target === null && Math.abs(az - azimuth) > Math.PI) {
+          azimuth = az; target = null; render();
+        } else {
+          target = az; glide();
+        }
       },
       isReady: function () { return !!program; },
 
