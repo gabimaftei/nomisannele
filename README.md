@@ -5,16 +5,13 @@ Plain HTML, CSS and JavaScript — no build step, no dependencies, no server cod
 
 ```
 index.html
-tools/optimise-model.py  ← shrinks a .glb for the web (see section 6)
 assets/
   css/styles.css
   css/fonts.css      ← @font-face rules for the local fonts
   js/products.js     ← the bag catalogue (edit this to add bags)
   js/app.js          ← page behaviour
-  js/bagviewer.js    ← the 3D viewer (see section 6)
   images/            ← the photos
   fonts/             ← self-hosted webfonts + their licence
-  models/            ← the .glb 3D models
 ```
 
 ---
@@ -98,9 +95,6 @@ Open `assets/js/products.js` and copy one of the blocks. Everything is commented
   sold: false,              // true → shows "Vândută", order button off
   ro: { tagline: '…', description: '…', pockets: '…', closure: '…' },
   en: { tagline: '…', description: '…', pockets: '…', closure: '…' },
-  // optional, only if there is a 3D model for it:
-  // model: 'noua-geanta.glb',
-  // modelFullRotation: true,
 }
 ```
 
@@ -134,9 +128,8 @@ cd ~/Desktop/NomisAnnele && python3 -m http.server 4321
 
 Then open <http://localhost:4321>.
 
-Use that rather than double-clicking `index.html`: opened as a `file://` page, the
-Content-Security-Policy blocks the 3D models from loading, so the 3D tab appears
-broken for no real reason.
+Use that rather than double-clicking `index.html`, which opens the page as a
+`file://` address instead of the way the site is served online.
 
 ---
 
@@ -172,103 +165,7 @@ The old `github.io` address keeps redirecting, so nothing breaks.
 
 ---
 
-## 6. The 3D models
-
-Three bags — **Buton, Patchwork and Nuanțe de gri** — have a rotatable 3D model,
-shown as a third tab in the gallery next to the photos. The other three bags show
-nothing extra; the tab only appears when `products.js` gives the bag a `model`.
-
-**They are white on purpose, and cannot be otherwise.** The files contain geometry
-only: no materials, no textures, and — crucially — no UV coordinates, which is what
-a texture needs in order to be wrapped onto a shape. No denim can ever be applied to
-them. That is why the note under the viewer says the real colours are in the
-photographs. Do not remove that note.
-
-The models were also reconstructed from photographs, so they are not equally
-accurate all the way round:
-
-All three now turn a full 360°. Buton used to be capped at ±72° because its
-back is the weakest part of the reconstruction, but half a turn is not a 3D view,
-so the cap is gone. Its back is softer than its front; that is the honest state of
-the model, not a bug to hide. The `modelFullRotation` flag is still there if you
-ever want to cap a future model.
-
-Dragging is scaled to the canvas: a swipe across the full width is exactly one
-complete turn, on a phone and on a desktop alike. Letting go keeps the spin going
-and eases it down.
-
-### The scroll section
-
-"Cum le facem" is no longer a static list of four steps. It is a tall section with
-a panel stuck inside it: as you scroll through, the **Patchwork** bag turns a full
-360° while the four steps cross-fade in time with the rotation, and a thin rail on
-the right shows how far through you are.
-
-It is progressive enhancement, not a requirement. `index.html` still contains the
-plain four-step list (`#steps-static`); `app.js` only swaps in the scrolling version
-when the browser can do WebGL **and** the visitor has not asked for reduced motion.
-If the model fails to load at any point, the section quietly puts the plain list back.
-
-The model is only fetched when the section comes within 300px of the viewport, and
-the renderer draws exactly one frame per scroll update — there is no animation loop
-running in the background.
-
-To use a different bag, change `MODEL` at the top of the orbit block in `app.js`.
-It should be one with `modelFullRotation: true`, since the section turns it all the
-way round.
-
-### Making the models smaller
-
-`tools/optimise-model.py` shrinks a `.glb` for the web without dropping a single
-triangle:
-
-```bash
-python3 tools/optimise-model.py raw.glb assets/models/name.glb
-```
-
-It sorts the triangles spatially, renumbers the vertices in the order they are used,
-and quantises the positions to 16-bit integers with the real scale moved into the
-node transform (the standard `KHR_mesh_quantization` extension, so the file still
-opens in Blender or three.js).
-
-On these three bags that took **386 KB down to 259 KB each over the wire** — a third
-smaller — with no visible difference. Note that GitHub Pages already gzips `.glb`, so
-the on-disk size overstates what visitors actually download.
-
-### Framing
-
-The camera works out its own distance from the size of the model and the shape of
-the frame, using whichever of the vertical and horizontal angles is tighter. This
-is not decoration: when the scrolling section was switched from Patchwork to
-Nuanțe de gri, a fixed camera distance left the bag cropped at the top and bottom.
-Any model, in any shaped box, now fits with a margin.
-
-`setOrbit(azimuth, polar, closeness)` takes closeness as a fraction of that fitted
-distance, not an absolute number, so pulling the camera in never breaks the fit.
-
-### The viewer
-
-`assets/js/bagviewer.js` is a small `.glb` reader plus a WebGL renderer, written
-for these files specifically. It is about 10 KB. A general-purpose 3D library would
-have been ~700 KB to draw 40,000 untextured triangles, and would have had to be
-self-hosted anyway because of the Content-Security-Policy.
-
-It generates the missing surface normals at load time, centres and scales each model
-so all bags appear the same size, and lights them with a fixed studio setup so that
-turning the bag reveals the seams.
-
-Two things it does deliberately:
-- **Nothing downloads until asked.** A model is ~460 KB and is only fetched when
-  someone actually presses the 3D tab.
-- **If WebGL is unavailable, the tab does not appear at all.** The visitor gets the
-  photographs, with no broken box and no apology.
-
-It reads both plain float positions and the quantised 16-bit ones the optimiser
-produces, and applies the node's scale and translation if it has any.
-
----
-
-## 7. How it's built, and why it's safe
+## 6. How it's built, and why it's safe
 
 There is very little that *can* go wrong here: no server, no database, no forms,
 no logins, no payments, no cookies, no analytics. Nothing is collected from anyone.
@@ -279,14 +176,14 @@ On top of that:
   leaves the site, which also keeps it clear of the GDPR problems that using
   Google Fonts directly has caused for EU sites. Licences are in `assets/fonts/OFL.txt`.
 - **No inline styles, even from script.** `style-src 'self'` blocks any style
-  written onto an element from JavaScript, which the scroll-progress rail and the
-  modal's scroll lock both need. Rather than loosening the policy, those two values
-  live in a stylesheet constructed in code (`adoptedStyleSheets`), which the policy
-  does not treat as inline. The policy stays strict and the features still work.
+  written onto an element from JavaScript, which the modal's scroll lock needs.
+  Rather than loosening the policy, that value lives in a stylesheet constructed
+  in code (`adoptedStyleSheets`), which the policy does not treat as inline. The
+  policy stays strict and the feature still works.
 - **A Content-Security-Policy** in the page head restricts everything to `'self'`.
   If someone ever managed to inject a script or a tracking pixel, the browser would
-  refuse to run it. `connect-src 'self'` allows exactly one kind of network call:
-  reading a 3D model from this same site. Nothing may be sent anywhere else.
+  refuse to run it. Requests to any other server are blocked too, so nothing can be
+  sent anywhere else.
 - **Every external link** carries `rel="noopener noreferrer"`, so the Instagram tab
   cannot reach back into the site and no referrer is leaked.
 - **Accessibility**: text passes WCAG AA contrast (the weakest pairing is 4.78:1
@@ -295,14 +192,14 @@ On top of that:
 
 ### One thing to know when you edit
 
-The CSS and JS are linked with a version marker, `?v=12`. **If you change
+The CSS and JS are linked with a version marker, `?v=N`. **If you change
 `products.js`, `app.js` or `styles.css`, bump that number in `index.html`** (to
-`?v=13`, and so on). Without it, people who visited before may keep seeing the old
+the next number, and so on). Without it, people who visited before may keep seeing the old
 version out of their browser cache for hours.
 
 ---
 
-## 8. Things worth doing next
+## 7. Things worth doing next
 
 - **Check the story text.** The "Cine suntem" section is written in their voice from
   what the Instagram posts show — mother and daughter, 2025, Patchwork being the first

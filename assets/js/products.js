@@ -29,10 +29,6 @@ const PRODUCTS = [
     tint: 'denim',
     badge: null,
     sold: false,
-    model: 'buton.glb',
-    modelFullRotation: true,  // tur complet; spatele e reconstruit mai slab, dar se vede tot
-    /* denim indigo, în spațiu liniar */
-    modelTint: [0.048, 0.070, 0.126],
     ro: {
       tagline: 'Siluetă verticală, închidere clasică',
       description:
@@ -129,12 +125,6 @@ const PRODUCTS = [
     tint: 'grey',
     badge: null,
     sold: false,
-    model: 'nuante-de-gri.glb',
-    modelFullRotation: true,
-    /* dungi orizontale, exact cum e cusută geanta reală */
-    modelTint: [0.034, 0.036, 0.040],
-    modelTintAlt: [0.150, 0.156, 0.166],
-    modelPattern: 1,
     ro: {
       tagline: 'Volum și linii, pentru zilele pline',
       description:
@@ -159,10 +149,6 @@ const PRODUCTS = [
     tint: 'patchwork',
     badge: 'first',
     sold: false,
-    model: 'patchwork.glb',
-    modelFullRotation: true,
-    /* denim indigo; culorile peticelor se văd în fotografii */
-    modelTint: [0.050, 0.072, 0.128],
     ro: {
       tagline: 'Prima geantă și primul proiect ambițios',
       description:

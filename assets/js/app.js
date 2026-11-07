@@ -89,14 +89,7 @@
       'a11y.photoOf': 'Fotografia {n} cu geanta {name}',
       'a11y.openBag': 'Vezi detalii despre geanta {name}',
 
-      'model.tab': 'Model 3D',
-      'model.open': 'Vezi modelul 3D al gențile {name}',
-      'model.note': 'Model tridimensional, pe care îl poți roti. Culorile și țesătura sunt apropiate de cele reale, dar așezarea exactă a peticelor se vede doar în fotografii.',
-      'model.loading': 'Se încarcă modelul…',
-      'model.error': 'Modelul nu a putut fi încărcat. Fotografiile sunt mai sus.',
 
-      'orbit.hint': 'Derulează ca să întorci geanta',
-      'orbit.alt': 'Geanta Nuanțe de gri, în trei dimensiuni, care se rotește pe măsură ce derulezi',
     },
 
     en: {
@@ -174,14 +167,7 @@
       'a11y.photoOf': 'Photo {n} of the {name} bag',
       'a11y.openBag': 'View details of the {name} bag',
 
-      'model.tab': '3D model',
-      'model.open': 'View the 3D model of the {name} bag',
-      'model.note': 'A three-dimensional model you can turn around. The colours and weave are close to the real thing, but the exact arrangement of the patches is only in the photographs.',
-      'model.loading': 'Loading the model…',
-      'model.error': 'The model could not be loaded. The photographs are above.',
 
-      'orbit.hint': 'Scroll to turn the bag',
-      'orbit.alt': 'The Nuanțe de gri bag in three dimensions, turning as you scroll',
     },
   };
 
@@ -215,7 +201,7 @@
     } catch (e) { return null; }
   })();
 
-  var liveVars = { '--scroll-lock': '0px', '--orbit-progress': '0' };
+  var liveVars = { '--scroll-lock': '0px' };
   function setVar(name, value) {
     liveVars[name] = value;
     if (!liveSheet) return;
@@ -291,7 +277,6 @@
     try { localStorage.setItem('na-lang', next); } catch (e) { /* navigare privată */ }
 
     renderGrid();
-    if (typeof orbit !== 'undefined' && orbit && orbit.active()) orbit.refresh();
     if (openProduct) fillProductModal(openProduct);
   }
 
@@ -345,64 +330,11 @@
   var orderLink = $('#pm-order');
   var openProduct = null;
 
-  /* Vizualizatorul 3D ține un context WebGL; îl eliberăm de fiecare dată
-     când se schimbă imaginea sau se închide fereastra. */
-  var viewer = null;
-  var note3d = $('#pm-3dnote');
-
-  function disposeViewer() {
-    if (viewer) { viewer.dispose(); viewer = null; }
-    /* scoatem și canvasul: altfel rămâne în pagină, cu bufferul lui, până
-       la următoarea deschidere */
-    var scene = $('.pm__3d', stage);
-    if (scene) scene.remove();
-    if (pmBox) pmBox.classList.remove('is-3d');
-    note3d.hidden = true;
-    note3d.textContent = '';
-  }
-
-  var pmBox = $('.pm');
-
   function setStage(p, i) {
-    disposeViewer();
-    if (pmBox) pmBox.classList.remove('is-3d');
     stage.innerHTML = '';
     stage.appendChild(
       photo(photoSrc(p, i), fill('a11y.photoOf', { n: i, name: p.name }), p.name, p.tint, true)
     );
-  }
-
-  /* Modelul (aprox. 460 KB) se descarcă abia când cineva apasă tab-ul 3D. */
-  function setStage3D(p) {
-    disposeViewer();
-    /* modelul primește toată lățimea ferestrei, nu doar coloana din stânga */
-    if (pmBox) pmBox.classList.add('is-3d');
-    stage.innerHTML = '';
-
-    var wrap = el('div', 'pm__3d');
-    var canvas = document.createElement('canvas');
-    canvas.className = 'pm__canvas';
-    canvas.tabIndex = 0;
-    canvas.setAttribute('role', 'img');
-    canvas.setAttribute('aria-label', fill('model.open', { name: p.name }));
-    var status = el('p', 'pm__3dstatus', t('model.loading'));
-
-    wrap.appendChild(canvas);
-    wrap.appendChild(status);
-    stage.appendChild(wrap);
-
-    note3d.textContent = t('model.note');
-    note3d.hidden = false;
-
-    var limit = 72 * Math.PI / 180;
-    viewer = window.BagViewer.create(canvas, 'assets/models/' + p.model, {
-      minAzimuth: p.modelFullRotation ? null : -limit,
-      maxAzimuth: p.modelFullRotation ? null : limit,
-      tint: p.modelTint, tintAlt: p.modelTintAlt, tintAlt2: p.modelTintAlt2,
-      pattern: p.modelPattern,
-      onReady: function () { status.remove(); wrap.classList.add('is-ready'); },
-      onError: function () { status.textContent = t('model.error'); status.classList.add('is-error'); }
-    });
   }
 
   function fillProductModal(p) {
@@ -443,17 +375,12 @@
     thumbs.innerHTML = '';
     setStage(p, 1);
 
-    /* Tab-ul 3D apare doar dacă geanta are model și dacă browserul chiar
-       poate reda WebGL. Unde nu poate, rămân fotografiile, fără vreun
-       dreptunghi gol care să ceară scuze. */
-    var has3D = !!(p.model && window.BagViewer && window.BagViewer.supported());
-
     function activate(btn) {
       $$('button', thumbs).forEach(function (b) { b.classList.remove('is-active'); });
       btn.classList.add('is-active');
     }
 
-    if (p.photos > 1 || has3D) {
+    if (p.photos > 1) {
       thumbs.hidden = false;
 
       var makeThumb = function (i) {
@@ -466,20 +393,6 @@
         return btn;
       };
       for (var i = 1; i <= p.photos; i++) thumbs.appendChild(makeThumb(i));
-
-      if (has3D) {
-        var btn3d = el('button', 'pm__thumb3d');
-        btn3d.type = 'button';
-        btn3d.setAttribute('aria-label', fill('model.open', { name: p.name }));
-        btn3d.innerHTML =
-          '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
-          '<path fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" ' +
-          'd="M12 3l7.5 4.3v9L12 20.6 4.5 16.3v-9L12 3zm0 0v8.6m0 0l7.5-4.3m-7.5 4.3L4.5 7.3m7.5 4.3v9"/>' +
-          '</svg>';
-        btn3d.appendChild(el('span', null, t('model.tab')));
-        btn3d.addEventListener('click', function () { setStage3D(p); activate(btn3d); });
-        thumbs.appendChild(btn3d);
-      }
     } else {
       thumbs.hidden = true;
     }
@@ -532,7 +445,6 @@
   }
 
   function closeModal(modal) {
-    if (modal === productModal) disposeViewer();
     modal.hidden = true;
     document.body.classList.remove('is-locked');
     setVar('--scroll-lock', '0px');
@@ -629,148 +541,6 @@
 
   /* Fotografia din secțiunea „Cine suntem”. Dacă story.jpg încă nu există,
      punem Patchwork, geanta despre care vorbește chiar textul de alături. */
-  /* ───────────────────────────────────────────
-     „Cum le facem”: geanta se rotește pe scroll
-     ───────────────────────────────────────────
-     O secțiune înaltă, cu un panou lipit în ea. Pe măsură ce cobori,
-     Patchwork face o tură completă, iar cei patru pași se schimbă în
-     ritmul rotirii. Dacă browserul nu poate WebGL sau dacă s-a cerut
-     mai puțină mișcare, nu pornește deloc și rămâne lista obișnuită.
-     ─────────────────────────────────────────── */
-
-  var orbit = (function () {
-    var host = $('#orbit');
-    var stat = $('#steps-static');
-    if (!host || !stat) return null;
-
-    var STEPS = 4;
-    var MODEL = 'nuante-de-gri.glb';   // dungile ei sunt reale, iar geometria ține turul complet
-
-    var canvas = $('#orbit-canvas');
-    var stepsBox = $('#orbit-steps');
-    var railFill = $('#orbit-rail-fill');
-    var hint = $('#orbit-hint');
-
-    var viewer = null, frame = null, progress = -1, current = -1, started = false;
-
-    function eligible() {
-      if (!window.BagViewer || !window.BagViewer.supported()) return false;
-      try {
-        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return false;
-      } catch (e) { /* ignoră */ }
-      return true;
-    }
-
-    /* Textele vin din același dicționar ca lista simplă, ca să nu existe
-       două locuri de actualizat. */
-    function renderSteps() {
-      stepsBox.innerHTML = '';
-      for (var i = 1; i <= STEPS; i++) {
-        var li = el('li', 'orbit__step');
-        li.appendChild(el('span', 'orbit__num', '0' + i));
-        li.appendChild(el('h3', null, t('process.s' + i + 't')));
-        li.appendChild(el('p', null, t('process.s' + i + 'p')));
-        stepsBox.appendChild(li);
-      }
-      if (hint) hint.textContent = t('orbit.hint');
-      if (canvas) canvas.setAttribute('aria-label', t('orbit.alt'));
-      current = -1;
-      paint();
-    }
-
-    function paint() {
-      var p = Math.max(0, progress);
-      var idx = Math.min(STEPS - 1, Math.floor(p * STEPS));
-      if (idx !== current) {
-        current = idx;
-        $$('.orbit__step', stepsBox).forEach(function (n, i) {
-          n.classList.toggle('is-on', i === idx);
-        });
-      }
-      setVar('--orbit-progress', p.toFixed(4));
-      if (viewer && viewer.isReady()) {
-        /* o tură completă pe toată înălțimea secțiunii, plus o apropiere
-           lentă la mijloc și o ușoară plecare a camerei — mișcarea aia
-           mică de dolly e ce face diferența dintre „se rotește ceva" și
-           „cineva a filmat obiectul" */
-        var ease = Math.sin(p * Math.PI);
-        viewer.setOrbit(
-          0.5 + p * Math.PI * 2,
-          -0.10 + ease * 0.20,
-          1.0 - ease * 0.10      /* apropiere de 10% la mijlocul secțiunii */
-        );
-      }
-    }
-
-    /* Modelul pornește când secțiunea e aproape. Verificăm asta în două
-       feluri, ca să nu depindem de un singur mecanism: un
-       IntersectionObserver și, ca plasă, distanța calculată la fiecare
-       scroll. Dacă observatorul nu se declanșează, tot pornim. */
-    function maybeStart(rect) {
-      if (started) return;
-      var near = rect.top < window.innerHeight + 300 && rect.bottom > -300;
-      if (near) start();
-    }
-
-    function measure() {
-      var rect = host.getBoundingClientRect();
-      maybeStart(rect);
-      var travel = host.offsetHeight - window.innerHeight;
-      var p = travel > 0 ? (-rect.top) / travel : 0;
-      p = Math.max(0, Math.min(1, p));
-      if (Math.abs(p - progress) < 0.0008) return;
-      progress = p;
-      if (frame) return;
-      frame = window.requestAnimationFrame(function () { frame = null; paint(); });
-    }
-
-    function start() {
-      if (started) return;
-      started = true;
-      var bag = null;
-      for (var i = 0; i < PRODUCTS.length; i++) {
-        if (PRODUCTS[i].model === MODEL) { bag = PRODUCTS[i]; break; }
-      }
-      viewer = window.BagViewer.create(canvas, 'assets/models/' + MODEL, {
-        interactive: false,
-        autoRotate: false,
-        tint: bag && bag.modelTint, tintAlt: bag && bag.modelTintAlt,
-        tintAlt2: bag && bag.modelTintAlt2, pattern: bag && bag.modelPattern,
-        onReady: function () { host.classList.add('is-ready'); progress = -1; measure(); },
-        onError: stop
-      });
-    }
-
-    /* dacă modelul nu vine, ne întoarcem la lista simplă, fără scandal */
-    function stop() {
-      host.hidden = true;
-      stat.hidden = false;
-      if (viewer) { viewer.dispose(); viewer = null; }
-      window.removeEventListener('scroll', measure);
-      window.removeEventListener('resize', measure);
-    }
-
-    function enable() {
-      if (!eligible()) return;
-      host.hidden = false;
-      stat.hidden = true;
-      renderSteps();
-      window.addEventListener('scroll', measure, { passive: true });
-      window.addEventListener('resize', measure);
-      measure();
-
-      /* observatorul e calea obișnuită; measure() de mai sus e plasa */
-      if ('IntersectionObserver' in window) {
-        var io = new IntersectionObserver(function (entries) {
-          if (entries[0].isIntersecting) { io.disconnect(); start(); }
-        }, { rootMargin: '300px 0px' });
-        io.observe(host);
-      }
-    }
-
-    return { enable: enable, refresh: renderSteps, active: function () { return !host.hidden; } };
-  })();
-
   (function storyPhoto() {
     var box = $('[data-photo="story"]');
     if (!box) return;
@@ -808,8 +578,6 @@
     saved = nav0.indexOf('ro') === 0 ? 'ro' : 'en';
   }
   applyLang(saved === 'en' ? 'en' : 'ro');
-
-  if (orbit) orbit.enable();
 
   $$('.section__head, .story, .steps, .facts, .contact').forEach(function (n) {
     n.classList.add('reveal');

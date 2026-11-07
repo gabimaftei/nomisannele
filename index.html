@@ -7,8 +7,7 @@
 
 <meta name="description" content="Mamă și fiică. Coasem genți din blugi purtați, acasă, una câte una. Nu iese niciodată aceeași geantă de două ori.">
 
-<!-- Nicio resursă din afară: fonturi, imagini, scripturi și modele sunt toate locale.
-     connect-src 'self' permite doar citirea modelelor 3D de pe același domeniu. -->
+<!-- Nicio resursă din afară: fonturile, imaginile și scripturile sunt toate locale. -->
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self'; font-src 'self'; script-src 'self'; connect-src 'self'; object-src 'none'; frame-src 'none'; base-uri 'self'; form-action 'none'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="theme-color" content="#1e3050">
@@ -30,7 +29,7 @@
 <link rel="preload" as="font" type="font/woff2" href="assets/fonts/jost-300-latin.woff2" crossorigin>
 <link rel="preload" as="font" type="font/woff2" href="assets/fonts/cormorant-garamond-400-latin.woff2" crossorigin>
 <link rel="stylesheet" href="assets/css/fonts.css">
-<link rel="stylesheet" href="assets/css/styles.css?v=24">
+<link rel="stylesheet" href="assets/css/styles.css?v=26">
 </head>
 <body>
 
@@ -158,20 +157,6 @@
     <h2 class="section__title" id="process-title" data-i18n="process.title">De la blugi purtați la geantă</h2>
   </div>
 
-  <!-- Varianta cu rotire pe scroll. Rămâne ascunsă până când app.js
-       confirmă că browserul poate WebGL și că nu s-a cerut mai puțină
-       mișcare; altfel rămâne lista simplă de mai jos. -->
-  <div class="orbit" id="orbit" hidden>
-    <div class="orbit__sticky">
-      <div class="orbit__stage">
-        <canvas class="orbit__canvas" id="orbit-canvas" role="img"></canvas>
-      </div>
-      <p class="orbit__hint" id="orbit-hint" aria-hidden="true"></p>
-      <ol class="orbit__steps" id="orbit-steps"></ol>
-      <div class="orbit__rail" aria-hidden="true"><span id="orbit-rail-fill"></span></div>
-    </div>
-  </div>
-
   <ol class="steps" id="steps-static">
     <li class="step">
       <span class="step__num" aria-hidden="true">01</span>
@@ -256,7 +241,6 @@
       <div class="pm__gallery">
         <div class="pm__stage" id="pm-stage"></div>
         <div class="pm__thumbs" id="pm-thumbs"></div>
-        <p class="pm__3dnote" id="pm-3dnote" hidden></p>
       </div>
       <div class="pm__info">
         <p class="eyebrow" id="pm-tagline"></p>
@@ -274,8 +258,7 @@
   </div>
 </div>
 
-<script src="assets/js/products.js?v=24"></script>
-<script src="assets/js/bagviewer.js?v=24"></script>
-<script src="assets/js/app.js?v=24"></script>
+<script src="assets/js/products.js?v=26"></script>
+<script src="assets/js/app.js?v=26"></script>
 </body>
 </html>
