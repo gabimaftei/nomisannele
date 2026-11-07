@@ -5,7 +5,7 @@
 (function () {
   'use strict';
 
-  var IG_HANDLE = 'nomisannele';
+  var IG_HANDLE = 'nomis.annele';
   var IG_DM = 'https://ig.me/m/' + IG_HANDLE;
   var IMG_PATH = 'assets/images/';
 
@@ -66,7 +66,7 @@
       'footer.tag': 'Genți din blugi, lucrate manual · din 2025',
 
       'product.order': 'Întreabă de geanta asta',
-      'product.orderNote': 'Se deschide conversația cu @nomisannele. Zi-ne că e vorba de „{name}” și îți spunem prețul.',
+      'product.orderNote': 'Se deschide conversația cu @nomis.annele. Zi-ne că e vorba de „{name}” și îți spunem prețul.',
       'product.sold': 'Geanta asta și-a găsit deja casa',
       'product.soldNote': 'Scrie-ne dacă îți dorești ceva asemănător. Putem coase un model pe comandă.',
       'product.madeFrom': 'Creată din {n} blugi upcycled',
@@ -144,7 +144,7 @@
       'footer.tag': 'Handmade denim bags · since 2025',
 
       'product.order': 'Ask about this bag',
-      'product.orderNote': 'Opens a chat with @nomisannele. Mention “{name}” and we will send you the price.',
+      'product.orderNote': 'Opens a chat with @nomis.annele. Mention “{name}” and we will send you the price.',
       'product.sold': 'This bag has already found its home',
       'product.soldNote': 'Write to us if you would like something similar. We can sew one to order.',
       'product.madeFrom': 'Made from {n} upcycled pairs of jeans',

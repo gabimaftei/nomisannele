@@ -1,6 +1,6 @@
 # NOMIS ANNELE — website (v1)
 
-A one-page site for the Instagram shop [@nomisannele](https://www.instagram.com/nomisannele/).
+A one-page site for the Instagram shop [@nomis.annele](https://www.instagram.com/nomis.annele/).
 Plain HTML, CSS and JavaScript — no build step, no dependencies, no server code.
 
 ```
@@ -106,14 +106,14 @@ a portfolio piece but can no longer be ordered.
 ## 3. How ordering works
 
 **One tap.** The *Întreabă de geanta asta* button opens the Instagram chat with
-`@nomisannele` (`https://ig.me/m/nomisannele`) straight away. Nothing to copy,
+`@nomis.annele` (`https://ig.me/m/nomis.annele`) straight away. Nothing to copy,
 nothing to paste, no extra screen in the way.
 
 Instagram has no way to pre-fill DM text from a link, so the site cannot drop the
 bag's name into the message on the customer's behalf. Instead, the line under the
 button tells them what to say:
 
-> Se deschide conversația cu @nomisannele. Zi-ne că e vorba de „Roz" și îți spunem prețul.
+> Se deschide conversația cu @nomis.annele. Zi-ne că e vorba de „Roz" și îți spunem prețul.
 
 Price and delivery get agreed in the chat. No checkout, no payment handling,
 nothing to maintain.
