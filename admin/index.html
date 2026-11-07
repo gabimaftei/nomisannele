@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Panou — NOMIS ANNELE</title>
+<meta name="robots" content="noindex, nofollow">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: blob:; style-src 'self'; font-src 'self'; script-src 'self'; connect-src 'self'; object-src 'none'; frame-src 'none'; base-uri 'self'; form-action 'none'">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231e3050'/%3E%3Ctext x='16' y='22' font-family='Georgia,serif' font-size='16' fill='%2393aac7' text-anchor='middle'%3EN%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="/assets/css/fonts.css">
+<link rel="stylesheet" href="/admin/admin.css?v=2">
+</head>
+<body>
+
+<!-- ══════════ INTRARE ══════════ -->
+<div class="gate" id="gate">
+  <form class="gate__box" id="gate-form">
+    <h1 class="gate__title">Panoul Nomis Annele</h1>
+    <p class="gate__lede">Gențile, textele și blogul: tot ce e pe site se schimbă de aici.</p>
+    <label class="field">
+      <span class="field__label">Parola</span>
+      <input type="password" id="gate-pass" autocomplete="current-password" required>
+    </label>
+    <button class="btn btn--primary btn--full" type="submit" id="gate-go">Intră</button>
+    <p class="gate__err" id="gate-err" role="alert" hidden></p>
+  </form>
+</div>
+
+<!-- ══════════ PANOU ══════════ -->
+<div class="app" id="app" hidden>
+
+  <header class="bar">
+    <div class="bar__brand"><strong>Panoul Nomis Annele</strong></div>
+    <nav class="tabs" role="tablist" aria-label="Ce editezi">
+      <button class="tab" type="button" role="tab" id="tab-bags" data-view="bags" aria-controls="view-bags" aria-selected="true">Genți<span class="tab__dot" hidden></span></button>
+      <button class="tab" type="button" role="tab" id="tab-texts" data-view="texts" aria-controls="view-texts" aria-selected="false" tabindex="-1">Texte<span class="tab__dot" hidden></span></button>
+      <button class="tab" type="button" role="tab" id="tab-blog" data-view="blog" aria-controls="view-blog" aria-selected="false" tabindex="-1">Blog<span class="tab__dot" hidden></span></button>
+    </nav>
+    <div class="bar__right">
+      <span class="bar__status" id="status" role="status" aria-live="polite"></span>
+      <a class="btn btn--ghost" href="/" target="_blank" rel="noopener">Vezi site-ul</a>
+      <button class="btn btn--primary" type="button" id="save" disabled>Publică</button>
+    </div>
+  </header>
+
+  <!-- ══════════ GENȚI ══════════ -->
+  <main class="layout" id="view-bags" role="tabpanel" aria-labelledby="tab-bags">
+    <aside class="side">
+      <div class="side__head">
+        <h2>Genți <span class="side__count" id="count"></span></h2>
+        <button class="btn btn--small" type="button" id="add">+ Adaugă</button>
+      </div>
+      <p class="side__hint">Ordinea de aici e ordinea de pe site. Prima e cea de sus. Cu săgețile o muți mai sus sau mai jos.</p>
+      <ol class="plist" id="plist"></ol>
+    </aside>
+
+    <section class="editor">
+      <p class="editor__empty" id="editor-empty">Alege o geantă din listă sau adaugă una nouă.</p>
+
+      <div id="editor-body" hidden>
+        <div class="editor__top">
+          <h2 id="ed-title">Geantă</h2>
+          <button class="btn btn--danger btn--small" type="button" id="del">Șterge geanta</button>
+        </div>
+
+        <section class="block">
+          <h3 class="block__title">Pozele</h3>
+          <p class="block__hint">
+            Prima poză e cea care se vede pe card, deci pune-o pe cea mai frumoasă.
+            Poți pune până la 12. Merg poze JPEG; dacă una e prea mare, o micșorez eu singură.
+          </p>
+          <div class="drop" id="drop">
+            <input type="file" id="file" accept="image/jpeg,image/png,image/webp" multiple hidden>
+            <button class="btn btn--ghost" type="button" id="pick">Alege poze</button>
+            <span class="drop__or">sau trage-le aici</span>
+          </div>
+          <ul class="shots" id="shots"></ul>
+        </section>
+
+        <section class="block">
+          <h3 class="block__title">Numele</h3>
+          <div class="row">
+            <label class="field field--half"><span class="field__label">Numele genții</span>
+              <input type="text" id="f-name" maxlength="80">
+              <span class="field__note">Același în română și în engleză. Din el se face și adresa pozelor; după ce publici, adresa nu se mai schimbă.</span></label>
+          </div>
+        </section>
+
+        <section class="block">
+          <h3 class="block__title">Textele</h3>
+          <p class="block__hint">
+            Stânga e ce se vede pe site în română, dreapta în engleză.
+            Subtitlul și descrierea în română sunt obligatorii; engleza e bine să fie completată și ea.
+          </p>
+          <div class="pair pair__head"><span>Română</span><span>English</span></div>
+
+          <div class="pair">
+            <label class="field"><span class="field__label">Subtitlu scurt *</span>
+              <input type="text" id="ro-tagline" maxlength="120">
+              <span class="field__note">Rândul mic de sub nume.</span></label>
+            <label class="field"><span class="field__label">Short subtitle</span>
+              <input type="text" id="en-tagline" maxlength="120"></label>
+          </div>
+          <div class="pair">
+            <label class="field"><span class="field__label">Descrierea *</span>
+              <textarea id="ro-description" rows="5" maxlength="1500"></textarea></label>
+            <label class="field"><span class="field__label">Description</span>
+              <textarea id="en-description" rows="5" maxlength="1500"></textarea></label>
+          </div>
+          <div class="pair">
+            <label class="field"><span class="field__label">Buzunare</span>
+              <input type="text" id="ro-pockets" maxlength="200">
+              <span class="field__note">De exemplu „3 buzunare interioare, unul cu fermoar".</span></label>
+            <label class="field"><span class="field__label">Pockets</span>
+              <input type="text" id="en-pockets" maxlength="200"></label>
+          </div>
+          <div class="pair">
+            <label class="field"><span class="field__label">Închidere</span>
+              <input type="text" id="ro-closure" maxlength="100">
+              <span class="field__note">De exemplu „Fermoar" sau „Nasture".</span></label>
+            <label class="field"><span class="field__label">Closure</span>
+              <input type="text" id="en-closure" maxlength="100"></label>
+          </div>
+        </section>
+
+        <section class="block">
+          <h3 class="block__title">Detalii</h3>
+          <div class="row">
+            <label class="field field--third"><span class="field__label">Ce fel de geantă e</span>
+              <select id="f-kind">
+                <option value="umar">Geantă de umăr</option>
+                <option value="rucsac">Rucsac</option>
+                <option value="borseta">Borsetă</option>
+                <option value="tote">Tote</option>
+              </select></label>
+            <label class="field field--third"><span class="field__label">Perechi de blugi folosite</span>
+              <input type="text" id="f-madeFrom" inputmode="numeric" maxlength="3">
+              <span class="field__note">Un număr de la 1 la 100. Gol = nu se mai arată pe site.</span></label>
+            <div class="field field--third">
+              <span class="field__label">Stare</span>
+              <label class="check check--box">
+                <input type="checkbox" id="f-sold">
+                <span>Geanta a plecat</span>
+              </label>
+              <span class="field__note">Rămâne pe site, dar fără buton de comandă.</span>
+            </div>
+          </div>
+
+          <p class="field__label field__label--gap">Mărimea, în centimetri</p>
+          <div class="row">
+            <label class="field field--third"><span class="field__label">Înălțime</span>
+              <input type="text" id="f-h" inputmode="decimal" maxlength="6"></label>
+            <label class="field field--third"><span class="field__label">Lățime</span>
+              <input type="text" id="f-w" inputmode="decimal" maxlength="6"></label>
+            <label class="field field--third"><span class="field__label">Adâncime</span>
+              <input type="text" id="f-d" inputmode="decimal" maxlength="6"></label>
+          </div>
+
+          <div class="row row--gap">
+            <label class="field field--third"><span class="field__label">Etichetă pe card (opțional)</span>
+              <input type="text" id="f-badge" maxlength="30">
+              <span class="field__note">Un cuvânt scurt, de exemplu „Nou". Gol = fără etichetă.</span></label>
+            <label class="field field--third"><span class="field__label">Culoarea de rezervă</span>
+              <select id="f-tint">
+                <option value="denim">Denim (albastru)</option>
+                <option value="dark">Închis</option>
+                <option value="grey">Gri</option>
+                <option value="pink">Roz</option>
+                <option value="patchwork">Patchwork</option>
+              </select>
+              <span class="field__note">Se vede doar cât timp poza nu s-a încărcat.</span></label>
+          </div>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <!-- ══════════ TEXTE ══════════ -->
+  <main class="layout" id="view-texts" role="tabpanel" aria-labelledby="tab-texts" hidden>
+    <aside class="side">
+      <div class="side__head"><h2>Secțiuni</h2></div>
+      <p class="side__hint">Alege o parte a site-ului. Româna în stânga, engleza în dreapta.</p>
+      <ol class="plist" id="tlist"></ol>
+    </aside>
+    <section class="editor">
+      <div class="editor__top"><h2 id="t-title"></h2></div>
+      <p class="block__hint block__hint--top" id="t-hint"></p>
+      <div id="t-fields"></div>
+    </section>
+  </main>
+
+  <!-- ══════════ BLOG ══════════ -->
+  <main class="layout" id="view-blog" role="tabpanel" aria-labelledby="tab-blog" hidden>
+    <aside class="side">
+      <div class="side__head">
+        <h2>Articole</h2>
+        <button class="btn btn--small" type="button" id="post-add">+ Scrie</button>
+      </div>
+      <p class="side__hint">Cel mai nou e primul. Ordinea vine din dată.</p>
+      <ol class="plist" id="post-list"></ol>
+    </aside>
+
+    <section class="editor">
+      <p class="editor__empty" id="post-empty">Încă nu e niciun articol. Apasă „+ Scrie" ca să începi primul.</p>
+
+      <div id="post-body" hidden>
+        <div class="editor__top">
+          <h2 id="post-title">Articol</h2>
+          <button class="btn btn--danger btn--small" type="button" id="post-del">Șterge articolul</button>
+        </div>
+
+        <section class="block">
+          <h3 class="block__title">Pozele</h3>
+          <p class="block__hint">
+            Prima poză e coperta. Poți pune până la 30. Merg poze JPEG; dacă una e prea mare, o micșorez eu singură.
+          </p>
+          <div class="drop" id="post-drop">
+            <input type="file" id="post-file" accept="image/jpeg,image/png,image/webp" multiple hidden>
+            <button class="btn btn--ghost" type="button" id="post-pick">Alege poze</button>
+            <span class="drop__or">sau trage-le aici</span>
+          </div>
+          <ul class="shots shots--photo" id="post-shots"></ul>
+        </section>
+
+        <section class="block">
+          <h3 class="block__title">Textul</h3>
+          <div class="row">
+            <label class="field field--date"><span class="field__label">Data</span>
+              <input type="date" id="post-date"></label>
+          </div>
+          <p class="block__hint block__hint--gap">
+            Lasă un rând liber între paragrafe. Titlul în română e obligatoriu; engleza e opțională.
+          </p>
+          <div class="pair pair__head"><span>Română</span><span>English (opțional)</span></div>
+          <div class="pair">
+            <label class="field"><span class="field__label">Titlul *</span>
+              <input type="text" id="post-ro-title" maxlength="160"></label>
+            <label class="field"><span class="field__label">Title</span>
+              <input type="text" id="post-en-title" maxlength="160"></label>
+          </div>
+          <div class="pair">
+            <label class="field"><span class="field__label">Textul</span>
+              <textarea class="tall" id="post-ro-body" rows="16" maxlength="20000"></textarea></label>
+            <label class="field"><span class="field__label">Text</span>
+              <textarea class="tall" id="post-en-body" rows="16" maxlength="20000"></textarea></label>
+          </div>
+        </section>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- ══════════ CE SE PUBLICĂ ══════════ -->
+<div class="modal" id="confirm" hidden>
+  <div class="modal__scrim" data-close></div>
+  <div class="modal__panel" role="dialog" aria-modal="true" aria-labelledby="cf-title">
+    <h2 id="cf-title">Gata de publicat</h2>
+    <ul class="changes" id="changes"></ul>
+    <label class="field" id="cf-msg-wrap"><span class="field__label">Ce ai schimbat (opțional)</span>
+      <input type="text" id="cf-msg" maxlength="110" placeholder="ex. Am adăugat geanta nouă"></label>
+    <p class="cf__note" id="cf-note">Modificarea apare pe site în câteva minute.</p>
+    <div class="cf__cta">
+      <button class="btn btn--ghost" type="button" data-close>Încă nu</button>
+      <button class="btn btn--primary" type="button" id="cf-go">Publică pe site</button>
+    </div>
+    <div class="gate__err" id="cf-err" role="alert" hidden>
+      <p id="cf-err-text"></p>
+      <div id="cf-help" hidden>
+        <p>Ce faci acum:</p>
+        <ol>
+          <li>Copiază undeva (de exemplu în Notițe) ce ai scris.</li>
+          <li>Apasă „Reîncarcă panoul" și intră din nou.</li>
+          <li>Refă modificările și publică.</li>
+        </ol>
+        <button class="btn btn--ghost btn--small" type="button" id="cf-reload">Reîncarcă panoul</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/admin/core.js?v=2"></script>
+<script src="/admin/bags.js?v=2"></script>
+<script src="/admin/texts.js?v=2"></script>
+<script src="/admin/blog.js?v=2"></script>
+</body>
+</html>

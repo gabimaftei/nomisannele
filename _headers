@@ -1,0 +1,36 @@
+# Cât timp păstrează browserul fiecare fișier. Fără asta, Cloudflare trimite
+# `max-age=0, must-revalidate`: la fiecare vizită browserul reîntreabă serverul
+# despre fiecare font, poză și script, chiar dacă nu s-a schimbat nimic.
+#
+# Paginile HTML nu apar aici: rămân cu regula implicită, deci o modificare
+# publicată din panou se vede imediat.
+
+# Fonturile nu se schimbă niciodată (numele lor spune tot).
+/assets/fonts/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Pozele păstrează același nume când sunt înlocuite din panou, deci nu pot fi
+# „pe vecie". O zi: cine le-a văzut deja nu le mai descarcă, iar o poză
+# schimbată se vede în cel mult 24 de ore.
+/assets/images/*
+  Cache-Control: public, max-age=86400
+/assets/blog/*
+  Cache-Control: public, max-age=86400
+
+# CSS și JS au versiune în adresă (?v=… sau ?h=…): când se ridică versiunea,
+# adresa e alta și se descarcă din nou. Doar o oră, ca o uitare de ridicat
+# versiunea să nu rămână ascunsă mult timp.
+/assets/css/*
+  Cache-Control: public, max-age=3600
+/assets/js/*
+  Cache-Control: public, max-age=3600
+
+# Anteturi de securitate, pe tot site-ul. Se adună cu regulile de cache de mai
+# sus. CSP-ul de aici are doar frame-ancestors, singura parte care nu merge
+# din <meta>: nimeni nu poate pune site-ul sau /admin într-un iframe.
+/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Strict-Transport-Security: max-age=31536000
+  Referrer-Policy: strict-origin-when-cross-origin
+  Content-Security-Policy: frame-ancestors 'none'

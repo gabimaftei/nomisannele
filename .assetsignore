@@ -1,0 +1,22 @@
+# Ce nu trebuie servit ca fișier al site-ului: codul serverului,
+# configurările, testele și documentația. Nimic secret (secretele stau în
+# Cloudflare, nu în repo), dar n-au ce căuta pe domeniul public.
+# Atenție: admin/ NU e aici, fiindcă panoul se servește de pe site.
+worker.js
+wrangler.jsonc
+server/
+test/
+data/
+.claude/
+*.md
+tools/
+package.json
+package-lock.json
+
+# Fișiere locale sau temporare: wrangler își scrie build-ul în .wrangler/
+# chiar în folderul publicat, iar .dev.vars are parolele de test.
+.wrangler/
+.dev.vars
+node_modules/
+.git/
+.gitignore

@@ -1,0 +1,45 @@
+{
+  // Configurația Worker-ului care găzduiește site-ul NOMIS ANNELE.
+  // Numele trebuie să rămână același cu al Worker-ului din Cloudflare,
+  // altfel următorul build ar crea unul nou, la altă adresă.
+  "name": "nomis-annele",
+  "main": "worker.js",
+  "compatibility_date": "2026-09-01",
+
+  // TODO: account_id lipsește; se completează când se știe contul
+  // Cloudflare în care stă Worker-ul (Dashboard → Workers → Account ID).
+  // Nu se inventează: până atunci wrangler întreabă contul la deploy.
+  // "account_id": "…",
+
+  // Domeniul propriu nu există încă, deci adresa nomis-annele.<cont>.workers.dev
+  // rămâne pornită. Când se leagă domeniul: workers_dev → false, se adaugă
+  // "routes" (cu custom_domain: true), se pune CANONICAL în worker.js și se
+  // schimbă run_worker_first mai jos (vezi comentariul de acolo).
+  "workers_dev": true,
+
+  "assets": {
+    // Fișierele site-ului stau în rădăcina repo-ului (vezi .assetsignore
+    // pentru ce nu se publică).
+    "directory": "./",
+    "binding": "ASSETS",
+    // Orice adresă inexistentă primește 404.html, cu statusul 404.
+    "not_found_handling": "404-page",
+    // Cât timp nu există domeniu canonic, Worker-ul are de făcut doar rutele
+    // panoului. Când se pune CANONICAL în worker.js, treceți aici
+    //   ["/*", "!/assets/*"]
+    // ca redirecționarea www./http să ruleze și pe pagini.
+    "run_worker_first": ["/api/*"]
+  },
+
+  // Câte parole greșite pot veni de pe o adresă IP într-un minut: vezi
+  // server/limit.js. Cere wrangler 4.36 sau mai nou. namespace_id e un număr
+  // ales de noi, unic în cont; nu trebuie creat nimic în dashboard. period
+  // poate fi doar 10 sau 60 (secunde).
+  "ratelimits": [
+    {
+      "name": "PASSWORD_LIMIT",
+      "namespace_id": "2001",
+      "simple": { "limit": 10, "period": 60 }
+    }
+  ]
+}
