@@ -278,3 +278,32 @@ img { max-width: 100%; height: auto; display: block; }
   .bar__right { width: 100%; justify-content: space-between; }
   .shot { width: calc(50% - .4rem); }
 }
+
+/* ── fereastra „Poza nouă" ── */
+.shots--bag .shot__frame { aspect-ratio: 4/5; }
+.modal__panel--wide { width: min(100%, 50rem); }
+.ph { display: flex; gap: 1.5rem; flex-wrap: wrap; align-items: flex-start; }
+.ph__stage { flex: 0 1 20rem; min-width: 0; width: 100%; max-width: 20rem; margin-inline: auto; display: flex; flex-direction: column; gap: .5rem; }
+.ph__canvas {
+  display: block; width: 100%; aspect-ratio: 4/5; height: auto; touch-action: none;
+  background: var(--bg-deep); border: 1px solid var(--line); border-radius: 2px; cursor: grab;
+}
+.ph__canvas.is-drag { cursor: grabbing; }
+.ph__ctrl { flex: 1 1 15rem; min-width: 0; display: flex; flex-direction: column; gap: 1.1rem; }
+.ph__ctrl input[type=range] { width: 100%; min-height: 44px; accent-color: var(--accent); }
+.ph__pad {
+  display: grid; grid-template-columns: repeat(3, 3.2rem); grid-template-rows: repeat(3, 44px); gap: .3rem;
+  justify-content: start;
+}
+.ph__pad .btn { padding: 0; min-width: 44px; }
+.ph__up { grid-column: 2; grid-row: 1; }
+.ph__left { grid-column: 1; grid-row: 2; }
+.ph__mid { grid-column: 2; grid-row: 2; }
+.ph__right { grid-column: 3; grid-row: 2; }
+.ph__down { grid-column: 2; grid-row: 3; }
+.ph__result { margin: 0; font-size: .88rem; color: var(--ink); line-height: 1.5; padding: .6rem .8rem; background: var(--bg-deep); border-radius: 2px; }
+@media (max-width: 760px) {
+  .modal { padding: .6rem; }
+  .modal__panel { padding: 1.1rem; max-height: 94vh; }
+  .modal__panel .cf__cta .btn { flex: 1 1 100%; }
+}

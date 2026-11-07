@@ -130,21 +130,42 @@
     return box;
   }
 
-  /* <img> care cade elegant pe fundalul de denim dacă fișierul lipsește. */
-  function photo(src, alt, label, tint, eager) {
+  /* <img> care cade elegant pe fundalul de denim dacă fișierul lipsește.
+     Cu webp=true, pozele de geantă se cer întâi ca WebP printr-un <picture>;
+     pozele vechi n-au .webp, așa că, dacă varianta WebP lipsește, scoatem
+     <source> și imaginea se reîncarcă singură din JPEG (costul: un 404 în
+     consolă pentru fiecare poză veche, până când e urcată din nou din panou). */
+  function photo(src, alt, label, tint, eager, webp) {
     var img = new Image();
     img.alt = alt;
     img.decoding = 'async';
     if (eager) { img.loading = 'eager'; img.fetchPriority = 'high'; }
     else { img.loading = 'lazy'; }
+    var pic = null, source = null;
+    if (webp) {
+      pic = document.createElement('picture');
+      source = document.createElement('source');
+      source.type = 'image/webp';
+      source.srcset = src.replace(/\.jpg$/, '.webp');
+      pic.appendChild(source);
+      pic.appendChild(img);
+    }
     /* ascultătorul se pune înaintea sursei, ca să prindem și fișierele
        despre care browserul știe deja că lipsesc */
     img.addEventListener('error', function () {
+      if (source) {
+        /* lipsește .webp-ul: cădem pe JPEG */
+        pic.removeChild(source);
+        source = null;
+        img.src = src;
+        return;
+      }
       var ph = placeholder(label, tint);
-      if (img.parentNode) img.parentNode.replaceChild(ph, img);
+      var node = pic || img;
+      if (node.parentNode) node.parentNode.replaceChild(ph, node);
     });
     img.src = src;
-    return img;
+    return pic || img;
   }
 
   function photoSrc(product, i) { return IMG_PATH + product.id + '-' + i + '.jpg'; }
@@ -215,7 +236,7 @@
       card.setAttribute('aria-label', fill('a11y.openBag', { name: p.name }));
 
       var media = el('div', 'card__media');
-      media.appendChild(photo(photoSrc(p, 1), '', p.name, p.tint, index === 0));
+      media.appendChild(photo(photoSrc(p, 1), '', p.name, p.tint, index === 0, true));
 
       var flagText = t('card.unique');
       if (p.sold) flagText = t('card.sold');
@@ -253,7 +274,7 @@
   function setStage(p, i) {
     stage.innerHTML = '';
     stage.appendChild(
-      photo(photoSrc(p, i), fill('a11y.photoOf', { n: i, name: p.name }), p.name, p.tint, true)
+      photo(photoSrc(p, i), fill('a11y.photoOf', { n: i, name: p.name }), p.name, p.tint, true, true)
     );
   }
 
@@ -307,7 +328,7 @@
         var btn = el('button');
         btn.type = 'button';
         btn.setAttribute('aria-label', fill('a11y.photoOf', { n: i, name: p.name }));
-        btn.appendChild(photo(photoSrc(p, i), '', String(i), p.tint));
+        btn.appendChild(photo(photoSrc(p, i), '', String(i), p.tint, false, true));
         if (i === 1) btn.classList.add('is-active');
         btn.addEventListener('click', function () { setStage(p, i); activate(btn); });
         return btn;

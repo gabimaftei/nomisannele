@@ -56,6 +56,7 @@ body{
 body.is-locked{ position:fixed; width:100%; overflow:hidden; top:var(--scroll-lock, 0px); }
 
 img{ max-width:100%; display:block; }
+picture{ display:contents; }
 a{ color:inherit; }
 
 h1,h2,h3{ font-family:var(--serif); font-weight:400; letter-spacing:.005em; margin:0; }

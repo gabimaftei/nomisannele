@@ -5,7 +5,7 @@
                        citește de aici, nu de pe site, ca să nu pornească
                        niciodată de la o versiune veche (cache, sau un
                        deploy încă neterminat).
-   POST /api/blob      urcă O poză (JPEG) și întoarce amprenta ei. Pozele
+   POST /api/blob      urcă O poză (JPEG sau WebP) și întoarce amprenta ei. Pozele
                        pleacă una câte una, deci nicio cerere nu devine
                        atât de mare încât să depășească limita de
                        procesor a planului gratuit.
@@ -340,10 +340,11 @@ async function blob(body, env) {
   if (typeof d !== 'string' || d.length < 8 || !/^[A-Za-z0-9+/]+=*$/.test(d)) fail('Poza nu e validă.');
   const bytes = Math.floor(d.length * 3 / 4) - (d.endsWith('==') ? 2 : d.endsWith('=') ? 1 : 0);
   if (bytes > MAX_BLOB) fail('Poza e prea mare.', 413);
-  const start = atob(d.slice(0, 4));
-  if (start.charCodeAt(0) !== 0xFF || start.charCodeAt(1) !== 0xD8 || start.charCodeAt(2) !== 0xFF) {
-    fail('Poza trebuie să fie JPEG.');
-  }
+  /* formatul se stabilește după primii octeți, nu după extensie sau după ce zice clientul */
+  const head = atob(d.slice(0, Math.min(16, d.length - (d.length % 4))));
+  const isJpeg = head.charCodeAt(0) === 0xFF && head.charCodeAt(1) === 0xD8 && head.charCodeAt(2) === 0xFF;
+  const isWebp = head.length >= 12 && head.startsWith('RIFF') && head.slice(8, 12) === 'WEBP';
+  if (!isJpeg && !isWebp) fail('Poza trebuie să fie JPEG sau WebP.');
   return json({ ok: true, sha: await createBlob(env, d) });
 }
 

@@ -204,7 +204,7 @@
 
       var size = document.createElement('p');
       size.className = 'shot__size';
-      size.textContent = s.kind === 'new' ? Math.round(s.bytes / 1024) + ' KB · nouă' : 'pe site';
+      size.textContent = s.kind === 'new' ? Math.round(s.bytes / 1024) + ' KB' + (s.webpBytes ? ' + ' + Math.round(s.webpBytes / 1024) + ' KB WebP' : '') + ' · nouă' : 'pe site';
       li.appendChild(size);
       ul.appendChild(li);
     });

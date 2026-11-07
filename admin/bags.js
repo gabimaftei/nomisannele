@@ -150,7 +150,7 @@
   async function addFiles(files) {
     var p = current;
     if (!p) return;
-    await NAA.addPhotos(files, p.shots, { max: MAX_PHOTOS, maxSide: 2000 });
+    await NAA.addBagPhotos(files, p.shots, { max: MAX_PHOTOS });
     if (p === current) drawShots();
     drawList(); touch();
   }
@@ -304,7 +304,10 @@
       var out = items.map(function (p) {
         p.shots.forEach(function (s, n) {
           var target = photoPath(p.id, n + 1);
-          if (s.kind === 'new') uploads.push({ path: target, blob: s.blob });
+          if (s.kind === 'new') {
+            uploads.push({ path: target, blob: s.blob });
+            if (s.webp) uploads.push({ path: target.replace(/\.jpg$/, '.webp'), blob: s.webp });
+          }
           else if (s.file !== target) uploads.push({ path: target, from: s.file });
         });
         var pr = pairs(p.madeFrom);

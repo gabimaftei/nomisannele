@@ -29,7 +29,11 @@ Deschizi adresa site-ului și adaugi `/admin` la capăt. Scrii parola și apeși
    După publicare nu se mai schimbă.
 3. **Pui pozele.** Le tragi peste chenarul punctat sau apeși **Alege poze**. Pot fi până la 12.
    Prima e cea de pe card. Săgețile `←` `→` schimbă ordinea, iar `✕` scoate o poză.
-   Pozele prea mari se micșorează singure, dar nu se taie. Pune poze cu geanta întreagă, bine luminată.
+   Pentru fiecare poză nouă se deschide fereastra **Poza nouă**. Marginile de aplicație (ora, bateria, butoanele) se taie singure.
+   Poza intră într-un cadru fix, mai înalt decât lat. Poți s-o muți cu degetul, cu butoanele sau cu săgețile de la tastatură și o poți mări.
+   Dacă tăierea nu e bună, bifează **Nu tăia automat marginile**. Dacă a rămas o urmă de bară, mută cadrul până dispare.
+   Apeși **Folosește poza** când îți place cum arată, sau **Sari peste**. Pozele deja publicate nu se schimbă.
+   Pune poze cu geanta întreagă, bine luminată.
 4. **Completezi detaliile.**
    - **Ce fel de geantă e:** geantă de umăr, rucsac, borsetă sau tote.
    - **Perechi de blugi folosite:** un număr de la 1 la 100. Lasă gol dacă nu vrei să se vadă.

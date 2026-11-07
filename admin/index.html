@@ -8,7 +8,7 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: blob:; style-src 'self'; font-src 'self'; script-src 'self'; connect-src 'self'; object-src 'none'; frame-src 'none'; base-uri 'self'; form-action 'none'">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231e3050'/%3E%3Ctext x='16' y='22' font-family='Georgia,serif' font-size='16' fill='%2393aac7' text-anchor='middle'%3EN%3C/text%3E%3C/svg%3E">
 <link rel="stylesheet" href="/assets/css/fonts.css">
-<link rel="stylesheet" href="/admin/admin.css?v=2">
+<link rel="stylesheet" href="/admin/admin.css?v=4">
 </head>
 <body>
 
@@ -67,14 +67,15 @@
           <h3 class="block__title">Pozele</h3>
           <p class="block__hint">
             Prima poză e cea care se vede pe card, deci pune-o pe cea mai frumoasă.
-            Poți pune până la 12. Merg poze JPEG; dacă una e prea mare, o micșorez eu singură.
+            Poți pune până la 12. Merg capturi sau poze JPEG și PNG: tai eu marginile de aplicație,
+            iar tu alegi cum se încadrează poza (4:5) și apeși „Folosește poza".
           </p>
           <div class="drop" id="drop">
             <input type="file" id="file" accept="image/jpeg,image/png,image/webp" multiple hidden>
             <button class="btn btn--ghost" type="button" id="pick">Alege poze</button>
             <span class="drop__or">sau trage-le aici</span>
           </div>
-          <ul class="shots" id="shots"></ul>
+          <ul class="shots shots--bag" id="shots"></ul>
         </section>
 
         <section class="block">
@@ -250,6 +251,51 @@
   </main>
 </div>
 
+<!-- ══════════ POZA NOUĂ ══════════ -->
+<div class="modal" id="ph" hidden>
+  <div class="modal__scrim"></div>
+  <div class="modal__panel modal__panel--wide" role="dialog" aria-modal="true" aria-labelledby="ph-title">
+    <h2 id="ph-title">Poza nouă</h2>
+    <p class="cf__note" id="ph-count"></p>
+    <div class="ph">
+      <div class="ph__stage">
+        <canvas class="ph__canvas" id="ph-canvas" width="320" height="400" tabindex="0"
+                role="img" aria-label="Previzualizarea pozei, în cadru 4:5. Cu săgețile de la tastatură muți poza."></canvas>
+        <p class="field__note">Cadrul are mereu forma 4:5, ca pe site. Trage poza cu degetul sau cu mouse-ul ca să alegi ce se vede.</p>
+      </div>
+      <div class="ph__ctrl">
+        <div class="field" id="ph-notrim-wrap">
+          <label class="check"><input type="checkbox" id="ph-notrim"><span>Nu tăia automat marginile</span></label>
+          <span class="field__note" id="ph-trim"></span>
+          <span class="field__note">Bifează dacă s-a tăiat din poză ceva ce trebuia să rămână.</span>
+        </div>
+        <div class="field">
+          <label class="field__label" for="ph-zoom">Mărește poza</label>
+          <input type="range" id="ph-zoom" min="100" max="300" step="5" value="100">
+          <span class="field__note">Spre dreapta apropii poza; la 100% se vede cât încape în cadru.</span>
+        </div>
+        <div class="field">
+          <span class="field__label" id="ph-move-label">Mută poza în cadru</span>
+          <div class="ph__pad" role="group" aria-labelledby="ph-move-label">
+            <button class="btn btn--ghost ph__up" type="button" id="ph-up" aria-label="Mută poza în sus">▲</button>
+            <button class="btn btn--ghost ph__left" type="button" id="ph-left" aria-label="Mută poza la stânga">◀</button>
+            <button class="btn btn--ghost ph__mid" type="button" id="ph-center" aria-label="Centrează poza">●</button>
+            <button class="btn btn--ghost ph__right" type="button" id="ph-right" aria-label="Mută poza la dreapta">▶</button>
+            <button class="btn btn--ghost ph__down" type="button" id="ph-down" aria-label="Mută poza în jos">▼</button>
+          </div>
+          <span class="field__note">Săgețile mută poza; bulina din mijloc o așază la loc, pe centru.</span>
+          <span class="field__note" id="ph-move-note"></span>
+        </div>
+        <p class="ph__result" id="ph-result" role="status" aria-live="polite"></p>
+      </div>
+    </div>
+    <div class="cf__cta">
+      <button class="btn btn--ghost" type="button" id="ph-skip">Sari peste poza asta</button>
+      <button class="btn btn--primary" type="button" id="ph-ok" disabled>Folosește poza</button>
+    </div>
+  </div>
+</div>
+
 <!-- ══════════ CE SE PUBLICĂ ══════════ -->
 <div class="modal" id="confirm" hidden>
   <div class="modal__scrim" data-close></div>
@@ -278,9 +324,10 @@
   </div>
 </div>
 
-<script src="/admin/core.js?v=2"></script>
-<script src="/admin/bags.js?v=2"></script>
-<script src="/admin/texts.js?v=2"></script>
-<script src="/admin/blog.js?v=2"></script>
+<script src="/admin/core.js?v=4"></script>
+<script src="/admin/photos.js?v=4"></script>
+<script src="/admin/bags.js?v=4"></script>
+<script src="/admin/texts.js?v=4"></script>
+<script src="/admin/blog.js?v=4"></script>
 </body>
 </html>
