@@ -19,7 +19,7 @@ const CONTENT = {
     "hero.title1": "Fiecare pereche de blugi",
     "hero.title2": "merită o a doua șansă",
     "hero.lede": "Suntem mamă și fiică. Coasem genți din blugi purtați, acasă, una câte una. Nu iese niciodată aceeași geantă de două ori.",
-    "hero.ctaPrimary": "Vezi gențile tale",
+    "hero.ctaPrimary": "Vezi gențile noastre",
     "hero.ctaSecondary": "Cine suntem",
     "collection.eyebrow": "Gențile",
     "collection.title": "Nu există două genți la fel",
