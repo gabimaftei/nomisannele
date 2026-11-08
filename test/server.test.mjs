@@ -174,7 +174,9 @@ test('renderIndex pe index.html real: texte, hash-uri, fără stiluri inline', (
   const { CONTENT } = parseConsts(read('assets/js/content.js'), ['CONTENT']);
   const content = checkContent(CONTENT, Object.keys(CONTENT.ro));
   content.ro['hero.title1'] = 'Titlu <nou> & „bun"';
-  const out = renderIndex(html, { content, productsJs: 'P', contentJs: 'C' });
+  const { PRODUCTS } = parseConsts(read('assets/js/products.js'), ['PRODUCTS']);
+  const opts = { content, productsJs: 'P', contentJs: 'C', products: PRODUCTS, posts: [], hasFile: (f) => fs.existsSync(path.join(ROOT, f)) };
+  const out = renderIndex(html, opts);
   assert.ok(out.includes('Titlu &lt;nou&gt; &amp; „bun&quot;'));
   assert.ok(out.includes(`assets/js/products.js?h=${hash('P')}"`));
   assert.ok(out.includes(`assets/js/content.js?h=${hash('C')}"`));
@@ -182,7 +184,7 @@ test('renderIndex pe index.html real: texte, hash-uri, fără stiluri inline', (
   /* nota cu link rămâne cu link */
   if (CONTENT.ro['collection.note']) assert.match(out, /<a href="#contact">/);
   /* idempotent: a doua trecere dă același rezultat */
-  assert.equal(renderIndex(out, { content, productsJs: 'P', contentJs: 'C' }), out);
+  assert.equal(renderIndex(out, opts), out);
   /* aceleași etichete HTML ca originalul (nu s-a rupt structura) */
   const tags = (h) => (h.match(/<\/?[a-z0-9]+/g) || []).length;
   assert.equal(tags(out), tags(html));
@@ -214,12 +216,15 @@ function state() {
 }
 const emptyContent = { ro: {}, en: {} };
 
-test('buildEntries: fișiere generate, fără blog/ și en/ în etapa asta', () => {
+test('buildEntries: fișiere generate (date, pagini RO/EN de geantă, sitemap, robots)', () => {
   const s = state();
   const products = checkProducts(s.products);
   const e = buildEntries({ state: s, products, content: emptyContent, posts: [], images: new Map(), body: {} });
   const paths = e.map((x) => x.path).sort();
-  assert.deepEqual(paths, ['404.html', 'assets/js/content.js', 'assets/js/products.js', 'data/posts.json', 'index.html', 'sitemap.xml']);
+  const fixed = ['404.html', 'assets/js/content.js', 'assets/js/products.js', 'blog/index.html', 'data/posts.json',
+    'en/blog/index.html', 'en/genti/index.html', 'en/index.html', 'genti/index.html', 'index.html', 'robots.txt', 'sitemap.xml'];
+  const bagPages = s.products.flatMap((p) => [`genti/${p.id}/index.html`, `en/genti/${p.id}/index.html`]);
+  assert.deepEqual(paths, [...fixed, ...bagPages].sort());
 });
 
 test('buildEntries: geanta ștearsă își pierde pozele, dar story-1.jpg rămâne', () => {

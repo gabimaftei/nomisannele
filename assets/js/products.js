@@ -1,38 +1,24 @@
 /* ---------------------------------------------------------------
-   NOMIS ANNELE — product catalogue
+   NOMIS ANNELE — catalogul de genți
    ---------------------------------------------------------------
-   All data taken from the Instagram posts. Order below matches the
-   Instagram grid (newest first).
+   FIȘIER GENERAT. Este rescris de fiecare dată când se salvează din
+   panoul de la /admin, deci orice modificare făcută de mână aici se
+   pierde la următoarea salvare. Pentru schimbări de conținut,
+   folosește panoul.
 
-   To add a new bag, copy one block and change the fields.
-
-   FIȘIER GENERAT de panoul de la /admin: o salvare îl rescrie, deci
-   modificările făcute de mână aici se pot pierde. Rămâne JS static:
-   o singură constantă PRODUCTS, literale simple, fără funcții.
-   Fără prețuri: prețul se discută pe Instagram.
-
-   Schema unei înregistrări:
-   { id, name, photos, kind, sold, dims:{h,w,d}, madeFrom, tint, badge,
-     ro:{tagline,description,pockets,closure},
-     en:{tagline,description,pockets,closure} }
-
-   id        : short slug, no spaces. Also the image filename prefix.
-   name      : nume propriu, același în ambele limbi.
-   kind      : tipul gentii — 'umar' (umăr) | 'rucsac' | 'borseta'
-               (borsetă) | 'tote'.
-   photos    : how many photos exist for this bag. The site looks for
-               assets/images/<id>-1.jpg, <id>-2.jpg, ... in order.
-               Missing photos fall back to a denim placeholder.
-   dims      : h = height, w = width, d = depth (centimetres)
-   madeFrom  : how many pairs of jeans went into it (null to hide)
-   tint      : colour of the placeholder shown until a photo exists —
-               'denim' | 'dark' | 'grey' | 'pink' | 'patchwork'
-   badge     : optional little label on the card (null for none)
-   sold      : true once the bag is gone — it stays on the site but
-               shows as "Unicat vândut" and the order button is off.
+   id        identificator scurt, fără spații; e și prefixul pozelor:
+             assets/images/<id>-1.jpg, <id>-2.jpg …
+   photos    câte poze are geanta
+   kind      umar | rucsac | borseta | tote
+   dims      h = înălțime, w = lățime, d = adâncime (cm)
+   madeFrom  câte perechi de blugi au intrat în ea (null = ascuns)
+   tint      culoarea de rezervă până apare poza:
+             denim | dark | grey | pink | patchwork
+   badge     etichetă mică pe card (null = fără)
+   sold      true când geanta nu mai e disponibilă
    --------------------------------------------------------------- */
 
-const PRODUCTS =[
+const PRODUCTS = [
   {
     "id": "buton",
     "name": "Buton",
@@ -196,6 +182,3 @@ const PRODUCTS =[
     }
   }
 ];
-
-/* Exported for the page script. */
-window.PRODUCTS = PRODUCTS;

@@ -17,9 +17,9 @@
    ═══════════════════════════════════════════════════════════════ */
 import { readHead, listFiles, readText, createBlob, commitTree } from './github.js';
 import {
-  parseConsts, renderProductsJs, renderContentJs, renderPostsJson,
-  renderIndex, renderNotFound, renderSitemap, siteInfo, sortPosts,
+  parseConsts, renderProductsJs, renderContentJs, renderPostsJson, sortPosts,
 } from './render.js';
+import { buildSiteFiles, stalePages } from './render-bags.js';
 import { LOCK_SECONDS, isLocked, noteFailure } from './limit.js';
 
 const MAX_BODY = 3 * 1024 * 1024;
@@ -285,10 +285,6 @@ export function buildEntries({ state: s, products, content, posts, images, body 
     for (let n = (kept ? kept.photos.length : 0) + 1; n <= (old.photos || []).length; n++) {
       deletes.add(`assets/blog/${old.id}/${n}.jpg`);
     }
-    /* pagini de articol, dacă există (se generează la o etapă următoare) */
-    if (!kept) for (const f of [`blog/${old.id}/index.html`, `en/blog/${old.id}/index.html`]) {
-      if (s.files.has(f)) deletes.add(f);
-    }
   }
 
   /* fiecare poză de care are nevoie o geantă sau un articol trebuie să
@@ -307,17 +303,22 @@ export function buildEntries({ state: s, products, content, posts, images, body 
 
   const productsJs = renderProductsJs(products);
   const contentJs = renderContentJs(content);
-  const { site, ver } = siteInfo(s.indexHtml);
   const text = (path, c) => ({ path, mode: '100644', type: 'blob', content: c });
 
+  /* paginile de geantă, de articol, /en/, sitemap și robots, generate din
+     datele noi; poza .webp se pomenește doar dacă există după commit */
+  const pages = buildSiteFiles({
+    indexHtml: s.indexHtml, products, content, posts, productsJs, contentJs, hasFile: exists,
+  });
   const entries = [
     text('assets/js/products.js', productsJs),
     text('assets/js/content.js', contentJs),
     text('data/posts.json', renderPostsJson(posts)),
-    text('index.html', renderIndex(s.indexHtml, { content, productsJs, contentJs })),
-    text('404.html', renderNotFound({ site, ver })),
-    text('sitemap.xml', renderSitemap({ site })),
   ];
+  for (const [path, html] of pages) entries.push(text(path, html));
+  /* paginile unei genți sau ale unui articol dispărut se șterg, calculat
+     din ce e în repo, nu din ce zice browserul */
+  for (const path of stalePages(s.files.keys(), pages)) deletes.add(path);
   for (const [path, sha] of images) entries.push({ path, mode: '100644', type: 'blob', sha });
   for (const path of deletes) {
     if (!images.has(path) && s.files.has(path)) entries.push({ path, mode: '100644', type: 'blob', sha: null });

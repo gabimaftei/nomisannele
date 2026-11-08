@@ -4,14 +4,9 @@
    FIȘIER GENERAT de panoul de la /admin, tabul „Texte". Orice
    modificare făcută de mână aici se pierde la următoarea salvare.
 
-   CONTENT   textele editabile, pe chei plate, în română (ro) și
-             engleză (en). Cheile din cele două limbi sunt identice.
-             Cheia „x.y" se leagă de elementul cu data-i18n="x.y" din
-             index.html; seo.title și seo.description merg în <title>
-             și în meta description. Valorile care conțin <a ...> sunt
-             HTML (doar linkul de la collection.note).
-             Textele de interfață (butoane, etichete de card, mesaje)
-             stau în assets/js/app.js, nu aici.
+   CONTENT   textele, pe chei, în română și engleză. O cheie nouă se
+             adaugă de mână aici ȘI în index.html (atributul data-i18n);
+             panoul poate schimba doar cheile care există deja.
    --------------------------------------------------------------- */
 
 const CONTENT = {

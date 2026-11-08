@@ -7,7 +7,7 @@
 
   var IG_HANDLE = 'nomis.annele';
   var IG_DM = 'https://ig.me/m/' + IG_HANDLE;
-  var IMG_PATH = 'assets/images/';
+  var IMG_PATH = '/assets/images/';
 
   /* ───────────────────────────────────────────
      1. Traduceri
@@ -73,7 +73,8 @@
 
   /* Textele editabile vin din content.js (CONTENT); aici rămâne doar
      interfața: butoane, etichete de card, mesaje. */
-  var lang = 'ro';
+  /* limba o dă pagina însăși (<html lang>): /en/ e în engleză, / în română */
+  var lang = document.documentElement.lang === 'en' ? 'en' : 'ro';
   function t(key) {
     var c = (typeof CONTENT !== 'undefined' && CONTENT) || {};
     return (c[lang] && c[lang][key]) || (UI[lang] && UI[lang][key]) ||
@@ -168,6 +169,12 @@
     return pic || img;
   }
 
+  /* pagina geantei; în engleză doar dacă geanta are text englezesc */
+  function bagUrl(p) {
+    var en = lang === 'en' && p.en && p.en.tagline && p.en.description;
+    return (en ? '/en' : '') + '/genti/' + p.id + '/';
+  }
+
   function photoSrc(product, i) { return IMG_PATH + product.id + '-' + i + '.jpg'; }
 
   function madeFromLabel(n) {
@@ -209,14 +216,6 @@
     var metaDesc = $('meta[name="description"]');
     if (metaDesc) metaDesc.setAttribute('content', t('seo.description'));
 
-    $$('.langswitch button').forEach(function (b) {
-      var on = b.dataset.lang === next;
-      b.setAttribute('aria-pressed', String(on));
-      b.classList.toggle('is-active', on);
-    });
-
-    try { localStorage.setItem('na-lang', next); } catch (e) { /* navigare privată */ }
-
     renderGrid();
     if (openProduct) fillProductModal(openProduct);
   }
@@ -231,8 +230,8 @@
     grid.innerHTML = '';
 
     PRODUCTS.forEach(function (p, index) {
-      var card = el('button', 'card reveal');
-      card.type = 'button';
+      var card = el('a', 'card reveal');
+      card.href = bagUrl(p);
       card.setAttribute('aria-label', fill('a11y.openBag', { name: p.name }));
 
       var media = el('div', 'card__media');
@@ -254,7 +253,13 @@
 
       card.appendChild(media);
       card.appendChild(body);
-      card.addEventListener('click', function () { showProduct(p, card); });
+      card.addEventListener('click', function (e) {
+        /* cu JavaScript se deschide fereastra; clic cu Ctrl/Cmd/Shift sau
+           buton din mijloc merge la pagina geantei, ca la orice link */
+        if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+        e.preventDefault();
+        showProduct(p, card);
+      });
       grid.appendChild(card);
     });
 
@@ -423,43 +428,7 @@
      7. Meniu, apariții la scroll, restul
      ─────────────────────────────────────────── */
 
-  var nav = $('#nav');
-  var burger = $('.nav__burger');
-  var navLinks = $('.nav__links');
-
-  function setMenu(open) {
-    burger.setAttribute('aria-expanded', String(open));
-    navLinks.classList.toggle('is-open', open);
-  }
-
-  burger.addEventListener('click', function () {
-    setMenu(burger.getAttribute('aria-expanded') !== 'true');
-  });
-
-  $$('.nav__links a').forEach(function (a) {
-    a.addEventListener('click', function () { setMenu(false); });
-  });
-
-  document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape' && burger.getAttribute('aria-expanded') === 'true') {
-      setMenu(false);
-      burger.focus();
-    }
-  });
-
-  var ticking = false;
-  window.addEventListener('scroll', function () {
-    if (ticking) return;
-    ticking = true;
-    window.requestAnimationFrame(function () {
-      nav.classList.toggle('is-stuck', window.scrollY > 8);
-      ticking = false;
-    });
-  }, { passive: true });
-
-  $$('.langswitch button').forEach(function (b) {
-    b.addEventListener('click', function () { applyLang(b.dataset.lang); });
-  });
+  /* meniul, bara lipită sus și anul sunt în common.js */
 
   var revealObserver = null;
   function observeReveals() {
@@ -509,16 +478,9 @@
      8. Pornire
      ─────────────────────────────────────────── */
 
-  $('#year').textContent = String(new Date().getFullYear());
   $('#dm-generic').href = IG_DM;
 
-  var saved = null;
-  try { saved = localStorage.getItem('na-lang'); } catch (e) { /* ignoră */ }
-  if (!saved) {
-    var nav0 = (navigator.language || 'ro').toLowerCase();
-    saved = nav0.indexOf('ro') === 0 ? 'ro' : 'en';
-  }
-  applyLang(saved === 'en' ? 'en' : 'ro');
+  applyLang(lang);
 
   $$('.section__head, .story, .steps, .facts, .contact').forEach(function (n) {
     n.classList.add('reveal');
