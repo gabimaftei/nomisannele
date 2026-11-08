@@ -6,10 +6,16 @@
   "main": "worker.js",
   "compatibility_date": "2026-09-01",
 
-  // TODO: account_id lipsește; se completează când se știe contul
-  // Cloudflare în care stă Worker-ul (Dashboard → Workers → Account ID).
-  // Nu se inventează: până atunci wrangler întreabă contul la deploy.
-  // "account_id": "…",
+  // Contul Cloudflare în care stă Worker-ul (Dashboard → Workers → Account ID).
+  // Nu e secret. Domeniul și Worker-ul trebuie să stea în același cont.
+  "account_id": "d718a99748e1fdfa4d9bae8680a100ed",
+
+  // Din ce depozit și ramură citește și scrie panoul. Ramura `staging` e pentru
+  // probe; la lansare, pe `main`, valoarea devine "main".
+  "vars": {
+    "GITHUB_REPO": "gabimaftei/nomisannele",
+    "GITHUB_BRANCH": "staging"
+  },
 
   // Domeniul propriu nu există încă, deci adresa nomis-annele.<cont>.workers.dev
   // rămâne pornită. Când se leagă domeniul: workers_dev → false, se adaugă
